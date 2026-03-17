@@ -1,0 +1,33 @@
+document:
+  footer:
+    left: "Fireworks AI  |  Confidential"
+    center: "Manual Review"
+    right: "English Showcase"
+
+defaults:
+  paragraph:
+    variant: body
+  table:
+    variant: standard
+    width: full
+  code:
+    variant: standard
+  blockquote:
+    variant: standard
+
+selectors:
+  - match:
+      type: paragraph
+      heading: "Manual Review Showcase"
+    apply:
+      variant: lead
+
+blocks:
+  wide-table:
+    variant: benchmark
+    columns: [4fr, 1fr, 1fr, 1fr, 1fr]
+  compact-table:
+    variant: standard
+    columns: [2fr, 1fr, 1fr]
+  appendix-break:
+    page_break_before: true

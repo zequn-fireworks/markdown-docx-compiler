@@ -1,0 +1,24 @@
+document:
+  footer:
+    left: "Fireworks AI  |  Confidential"
+    center: "人工复核"
+    right: "中文示例"
+
+defaults:
+  paragraph:
+    variant: body
+  table:
+    variant: standard
+    width: full
+
+selectors:
+  - match:
+      type: paragraph
+      heading: "人工复核示例文档"
+    apply:
+      variant: lead
+
+blocks:
+  zh-results-table:
+    variant: benchmark
+    columns: [2fr, 1fr, 1fr]

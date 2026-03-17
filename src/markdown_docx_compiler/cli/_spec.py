@@ -1,0 +1,243 @@
+"""Spec noun: show, validate, and create commands."""
+
+from __future__ import annotations
+
+import argparse
+from dataclasses import asdict
+from pathlib import Path
+from typing import Any
+
+import yaml
+
+from markdown_docx_compiler.cli._output import emit_error, emit_success, is_json_mode
+
+
+def register_spec_parser(noun_subparsers: argparse._SubParsersAction) -> None:  # type: ignore[type-arg]
+    from markdown_docx_compiler.selectors import HELP_TOPIC as _SELECTORS
+    from markdown_docx_compiler.sidecar import HELP_TOPIC as _SIDECAR
+
+    noun_parser = noun_subparsers.add_parser(
+        "spec",
+        help="Manage sidecar configuration files",
+        description="Manage sidecar configuration files.",
+        epilog=_SIDECAR + "\n" + _SELECTORS,
+        formatter_class=argparse.RawDescriptionHelpFormatter,
+    )
+    noun_parser.set_defaults(noun_parser=noun_parser)
+    verb_sub = noun_parser.add_subparsers(dest="verb")
+
+    # --- show ---
+    show_p = verb_sub.add_parser(
+        "show",
+        help="Display sidecar content or resolved config",
+        description=(
+            "Display a sidecar file, or use --for to discover and display the sidecar "
+            "for a markdown document.  Add --resolved to show the fully merged config."
+        ),
+    )
+    show_p.add_argument("path", nargs="?", default=None, help="Sidecar YAML file path")
+    show_p.add_argument(
+        "--for",
+        dest="for_doc",
+        default=None,
+        metavar="MARKDOWN_FILE",
+        help="Discover sidecar for this markdown file",
+    )
+    show_p.add_argument(
+        "--resolved",
+        action="store_true",
+        help="Show fully merged config (template + sidecar + front matter)",
+    )
+    show_p.add_argument("--template", help="Template name (used with --resolved)")
+    show_p.set_defaults(handler=_handle_show, verb="show")
+
+    # --- validate ---
+    validate_p = verb_sub.add_parser(
+        "validate",
+        help="Check sidecar YAML validity",
+        description="Validate a sidecar YAML file for structural correctness.",
+    )
+    validate_p.add_argument("path", nargs="?", default=None, help="Sidecar YAML file path")
+    validate_p.add_argument(
+        "--for",
+        dest="for_doc",
+        default=None,
+        metavar="MARKDOWN_FILE",
+        help="Discover sidecar for this markdown file",
+    )
+    validate_p.set_defaults(handler=_handle_validate, verb="validate")
+
+    # --- create ---
+    create_p = verb_sub.add_parser(
+        "create",
+        help="Scaffold a new sidecar YAML",
+        description="Generate a starter sidecar YAML with annotated structure.",
+    )
+    create_p.add_argument("path", nargs="?", default=None, help="Output file path (default: stdout)")
+    create_p.set_defaults(handler=_handle_create, verb="create")
+
+
+def _resolve_spec_path(args: argparse.Namespace) -> Path:
+    """Resolve the sidecar path from positional arg or --for flag."""
+    if args.path and args.for_doc:
+        emit_error(
+            command=f"spec {args.verb}",
+            code="INVALID_ARGS",
+            message="Cannot use both a positional path and --for at the same time.",
+            hint="Provide either a sidecar path or --for <markdown-file>, not both.",
+        )
+    if args.for_doc:
+        from markdown_docx_compiler.compiler import discover_sidecar_path
+
+        md_path = Path(args.for_doc).resolve()
+        if not md_path.exists():
+            raise FileNotFoundError(f"Markdown file not found: {md_path}")
+        spec = discover_sidecar_path(md_path)
+        if spec is None:
+            emit_error(
+                command=f"spec {args.verb}",
+                code="NO_SPEC_FOUND",
+                message=f"No sidecar found for {md_path.name}",
+                hint="Create one with `mdc spec create` or pass a path explicitly.",
+                context={"markdown_file": str(md_path)},
+            )
+        return spec  # type: ignore[return-value]
+    if args.path:
+        p = Path(args.path).resolve()
+        if not p.exists():
+            raise FileNotFoundError(f"Sidecar file not found: {p}")
+        return p
+    emit_error(
+        command=f"spec {args.verb}",
+        code="MISSING_ARG",
+        message="No sidecar path provided.",
+        hint="Provide a sidecar path or use --for <markdown-file> to auto-discover.",
+    )
+    raise AssertionError("unreachable")  # pragma: no cover
+
+
+def _handle_show(args: argparse.Namespace) -> None:
+    spec_path = _resolve_spec_path(args)
+
+    if args.resolved:
+        _show_resolved(spec_path, args)
+        return
+
+    from markdown_docx_compiler.sidecar import load_sidecar
+
+    sidecar = load_sidecar(spec_path)
+    data: dict[str, Any] = {
+        "spec_path": str(spec_path),
+        "sidecar": asdict(sidecar),
+    }
+    if is_json_mode():
+        emit_success(command="spec show", data=data)
+    else:
+        print(f"# {spec_path.name}")
+        print(spec_path.read_text(encoding="utf-8"))
+
+
+def _show_resolved(spec_path: Path, args: argparse.Namespace) -> None:
+    from markdown_docx_compiler.parser import extract_front_matter
+    from markdown_docx_compiler.selectors import resolve_document_config
+    from markdown_docx_compiler.sidecar import load_sidecar
+
+    sidecar = load_sidecar(spec_path)
+    md_path = Path(args.for_doc).resolve() if args.for_doc else None
+    front_matter: dict[str, Any] = {}
+    base_dir = spec_path.parent
+
+    if md_path and md_path.exists():
+        raw = md_path.read_text(encoding="utf-8")
+        front_matter, _ = extract_front_matter(raw)
+        base_dir = md_path.parent
+
+    theme, doc_config, resolved_sidecar = resolve_document_config(
+        front_matter=front_matter,
+        sidecar=sidecar,
+        template_override=getattr(args, "template", None),
+        base_dir=base_dir,
+    )
+    data: dict[str, Any] = {
+        "spec_path": str(spec_path),
+        "theme": theme.name,
+        "document_config": asdict(doc_config),
+        "resolved_sidecar": asdict(resolved_sidecar),
+    }
+    if is_json_mode():
+        emit_success(command="spec show", data=data)
+    else:
+        print(f"# Resolved config (spec={spec_path.name}, theme={theme.name})")
+        print(yaml.dump(data, default_flow_style=False, sort_keys=False))
+
+
+def _handle_validate(args: argparse.Namespace) -> None:
+    spec_path = _resolve_spec_path(args)
+
+    from markdown_docx_compiler.sidecar import load_sidecar
+
+    sidecar = load_sidecar(spec_path)
+    block_count = len(sidecar.defaults) + len(sidecar.selectors) + len(sidecar.blocks)
+    data: dict[str, Any] = {
+        "spec_path": str(spec_path),
+        "valid": True,
+        "template": sidecar.template,
+        "defaults_count": len(sidecar.defaults),
+        "selectors_count": len(sidecar.selectors),
+        "blocks_count": len(sidecar.blocks),
+    }
+    emit_success(
+        command="spec validate",
+        data=data,
+        human=f"Valid — {spec_path.name} ({block_count} rules)",
+    )
+
+
+_SCAFFOLD = """\
+# Sidecar config for document styling.
+# Run `mdc spec --help` for full reference.
+
+# template: fireworks-rca    # Start from an installed template
+
+document:
+  footer:
+    left: ""
+    center: ""
+    right: ""
+    show_page_numbers: true
+  # margin:
+  #   top_inches: 1.0
+  #   bottom_inches: 0.8
+
+defaults:
+  paragraph:
+    variant: body
+  table:
+    variant: standard
+    width: full
+
+# selectors:
+#   - match: { type: table, column_count: 5 }
+#     apply: { variant: benchmark }
+
+# blocks:
+#   my-anchor-id:
+#     columns: [3fr, 1fr, 1fr]
+"""
+
+
+def _handle_create(args: argparse.Namespace) -> None:
+    if args.path:
+        out = Path(args.path)
+        out.write_text(_SCAFFOLD, encoding="utf-8")
+        emit_success(
+            command="spec create",
+            data={"path": str(out.resolve())},
+            human=f"Created {out}",
+        )
+    else:
+        emit_success(
+            command="spec create",
+            data={"scaffold": _SCAFFOLD},
+            human=_SCAFFOLD,
+        )

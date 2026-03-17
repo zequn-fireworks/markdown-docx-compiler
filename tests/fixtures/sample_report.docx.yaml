@@ -1,0 +1,28 @@
+document:
+  footer:
+    left: "Fireworks AI  |  Confidential"
+    center: "2026-03-16"
+    right: "Draft"
+
+defaults:
+  paragraph:
+    variant: body
+  table:
+    variant: standard
+    width: full
+  code:
+    variant: standard
+  blockquote:
+    variant: standard
+
+selectors:
+  - match:
+      type: paragraph
+      heading: "Sample Report"
+    apply:
+      variant: lead
+
+blocks:
+  results-table:
+    variant: benchmark
+    columns: [3fr, 1fr, 1fr]

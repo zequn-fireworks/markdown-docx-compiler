@@ -1,0 +1,41 @@
+name: fireworks
+description: Generic Fireworks AI document template.
+
+document:
+  margin:
+    top_inches: 1.0
+    bottom_inches: 0.8
+    left_inches: 1.0
+    right_inches: 1.0
+  footer:
+    left: "Fireworks AI  |  Confidential"
+    show_page_numbers: true
+
+defaults:
+  paragraph:
+    variant: body
+    line_spacing: 1.25
+    space_after: 6.0
+  table:
+    variant: standard
+    width: full
+  code:
+    variant: standard
+    background_color: "F8F8F8"
+    font_size: 9.5
+    line_spacing: 1.15
+    space_before: 6.0
+    space_after: 6.0
+  blockquote:
+    variant: standard
+    color: "6B7280"
+    space_before: 8.0
+    space_after: 8.0
+  list:
+    variant: standard
+    space_before: 2.0
+    space_after: 2.0
+  image:
+    variant: standard
+    space_before: 8.0
+    space_after: 8.0
