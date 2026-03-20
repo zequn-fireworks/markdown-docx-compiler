@@ -11,6 +11,17 @@ notes.
 
 - No unreleased changes yet.
 
+## 0.1.1
+
+Polish the public package surfaces after the first PyPI release.
+
+Highlights:
+
+- Improved README formatting for better rendering on package indexes
+- Added the PyPI version badge to the README
+- Tightened install guidance with `pipx` and a simpler first-run verification path
+- Expanded release documentation and linked the changelog from package metadata
+
 ## 0.1.0
 
 Initial public release.

@@ -4,7 +4,7 @@ build-backend = "hatchling.build"
 
 [project]
 name = "markdown-docx-compiler"
-version = "0.1.0"
+version = "0.1.1"
 description = "AI-native, agent-friendly markdown to DOCX compiler for polished editable docs, Google Docs handoff, and PDF-ready workflows."
 readme = "README.md"
 requires-python = ">=3.11"
