@@ -29,6 +29,7 @@ from markdown_docx_compiler.models.style import (
     BorderStyle,
     FontStyle,
     ImageProps,
+    ListProps,
     LinkStyle,
     PaddingStyle,
     SpacingStyle,
@@ -42,6 +43,7 @@ _BORDER_KEYS = frozenset(f.name for f in fields(BorderStyle))
 _LINK_KEYS = frozenset(f.name for f in fields(LinkStyle))
 _PADDING_KEYS = frozenset(f.name for f in fields(PaddingStyle))
 _IMAGE_KEYS = frozenset(f.name for f in fields(ImageProps))
+_LIST_KEYS = frozenset(f.name for f in fields(ListProps))
 _TABLE_KEYS = frozenset(f.name for f in fields(TableProps))
 _BLOCK_STYLE_KEYS = frozenset(f.name for f in fields(BlockStyle))
 _BLOCK_OVERRIDE_KEYS = _BLOCK_STYLE_KEYS | {"type"}
@@ -64,6 +66,7 @@ _TOP_LEVEL_KEYS = frozenset(
 _BLOCK_TYPE_VALUES = frozenset(BLOCK_TYPE_NAMES.values())
 _ALIGNMENT_VALUES = frozenset({"left", "center", "right", "justify"})
 _IMAGE_ALIGNMENT_VALUES = frozenset({"left", "center", "right"})
+_LIST_NUMBERING_VALUES = frozenset({"decimal_hierarchical", "alpha_hierarchical", "alpha_paren_hierarchical"})
 _BORDER_STYLE_VALUES = frozenset({"single", "double", "dotted", "dashed", "none"})
 _MEASUREMENT_RE = re.compile(r"^\d+(?:\.\d+)?in$")
 _PERCENT_RE = re.compile(r"^\d+(?:\.\d+)?%$")
@@ -258,6 +261,17 @@ def _image_from_dict(data: dict[str, Any] | None) -> ImageProps | None:
     )
 
 
+def _list_from_dict(data: dict[str, Any] | None) -> ListProps | None:
+    if not data:
+        return None
+    _validate_keys(data, _LIST_KEYS, context="list")
+    numbering = _read_str(data, "numbering", context="list")
+    _validate_choice(numbering, _LIST_NUMBERING_VALUES, context="list.numbering")
+    return ListProps(
+        numbering=numbering.lower() if numbering is not None else None,
+    )
+
+
 def _table_from_dict(data: dict[str, Any] | None) -> TableProps | None:
     if not data:
         return None
@@ -296,6 +310,7 @@ def _block_style_from_dict(data: dict[str, Any] | None) -> BlockStyle:
         width=width,
         link=_link_from_dict(_mapping_or_none(data, "link", context="block style")),
         image=_image_from_dict(_mapping_or_none(data, "image", context="block style")),
+        list=_list_from_dict(_mapping_or_none(data, "list", context="block style")),
         table=_table_from_dict(_mapping_or_none(data, "table", context="block style")),
     )
 

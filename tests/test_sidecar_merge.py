@@ -10,7 +10,7 @@ from markdown_docx_compiler.models.config import (
     SidecarConfig,
 )
 from markdown_docx_compiler.models.loader import _parse_sidecar_payload, load_sidecar
-from markdown_docx_compiler.models.style import BlockStyle, FontStyle, SpacingStyle
+from markdown_docx_compiler.models.style import BlockStyle, FontStyle, ListProps, SpacingStyle
 from markdown_docx_compiler.resolve.merge import merge_sidecar_config
 
 
@@ -42,6 +42,15 @@ class TestParseSidecarPayload:
     def test_invalid_block_override_type_is_rejected(self) -> None:
         with pytest.raises(ValueError, match=r"Invalid block override\.type"):
             _parse_sidecar_payload({"blocks": {"demo": {"type": "unknown"}}})
+
+    def test_invalid_list_numbering_is_rejected(self) -> None:
+        with pytest.raises(ValueError, match=r"Invalid list\.numbering"):
+            _parse_sidecar_payload({"defaults": {"list": {"list": {"numbering": "roman-outline"}}}})
+
+    def test_reads_list_numbering(self) -> None:
+        config = _parse_sidecar_payload({"defaults": {"list": {"list": {"numbering": "alpha_paren_hierarchical"}}}})
+        assert config.defaults["list"].list is not None
+        assert config.defaults["list"].list.numbering == "alpha_paren_hierarchical"
 
 
 class TestMergeSidecarConfig:
@@ -93,6 +102,22 @@ class TestMergeSidecarConfig:
         assert merged.blocks["my-table"].style.width == "full"
         assert merged.blocks["my-table"].style.background == "EEEEEE"
         assert merged.blocks["new-block"].style.font.bold is True
+
+    def test_list_props_merge(self) -> None:
+        base = SidecarConfig(
+            defaults={
+                "list": BlockStyle(list=ListProps(numbering="decimal_hierarchical")),
+            }
+        )
+        override = SidecarConfig(
+            defaults={
+                "list": BlockStyle(spacing=SpacingStyle(after=5.0)),
+            }
+        )
+        merged = merge_sidecar_config(base, override)
+        assert merged.defaults["list"].list is not None
+        assert merged.defaults["list"].list.numbering == "decimal_hierarchical"
+        assert merged.defaults["list"].spacing.after == 5.0
 
     def test_inherits_from_override_wins(self) -> None:
         base = SidecarConfig(inherits="../base.docx.yaml")

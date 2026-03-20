@@ -7,12 +7,16 @@ files optimized for Google Docs import and human editing.
 
 Explore complete example document projects in the repository:
 
-- [`google-offer/`][google-example] - fictionalized offer letter with a logo
-  header and compensation table. [Markdown][google-md], [Sidecar][google-yaml],
-  [PDF preview][google-pdf]
-- [`openai-offer/`][openai-example] - fictionalized offer letter with a
-  two-column header and equity section. [Markdown][openai-md],
-  [Sidecar][openai-yaml], [PDF preview][openai-pdf]
+- [`goggle-offer/`][goggle-example] - fictionalized offer letter with a logo
+  header, doc header slots, and compensation table. [Markdown][goggle-md],
+  [Sidecar][goggle-yaml], [PDF preview][goggle-pdf]
+- [`basethree-design-review/`][basethree-example] - fictionalized inference
+  company design review with a shaded summary, decision matrix, risk register,
+  and appendix page break. [Markdown][basethree-md],
+  [Sidecar][basethree-yaml], [PDF preview][basethree-pdf]
+- [`opena1-launch-brief/`][opena1-example] - fictionalized bilingual launch
+  brief with centered title styling, editorial callouts, and compact tables.
+  [Markdown][opena1-md], [Sidecar][opena1-yaml], [PDF preview][opena1-pdf]
 
 Company names in the examples are intentionally fictionalized to avoid
 trademark issues.
@@ -139,12 +143,16 @@ uvx twine check dist/*
 
 [agents-doc]: https://github.com/zequn-fireworks/markdown-docx-compiler/blob/main/AGENTS.md
 [examples-doc]: https://github.com/zequn-fireworks/markdown-docx-compiler/tree/main/examples
-[google-example]: https://github.com/zequn-fireworks/markdown-docx-compiler/tree/main/examples/google-offer
-[google-md]: https://github.com/zequn-fireworks/markdown-docx-compiler/blob/main/examples/google-offer/offer.md
-[google-pdf]: https://github.com/zequn-fireworks/markdown-docx-compiler/blob/main/examples/google-offer/offer.pdf
-[google-yaml]: https://github.com/zequn-fireworks/markdown-docx-compiler/blob/main/examples/google-offer/offer.docx.yaml
-[openai-example]: https://github.com/zequn-fireworks/markdown-docx-compiler/tree/main/examples/openai-offer
-[openai-md]: https://github.com/zequn-fireworks/markdown-docx-compiler/blob/main/examples/openai-offer/offer.md
-[openai-pdf]: https://github.com/zequn-fireworks/markdown-docx-compiler/blob/main/examples/openai-offer/offer.pdf
-[openai-yaml]: https://github.com/zequn-fireworks/markdown-docx-compiler/blob/main/examples/openai-offer/offer.docx.yaml
+[goggle-example]: https://github.com/zequn-fireworks/markdown-docx-compiler/tree/main/examples/goggle-offer
+[goggle-md]: https://github.com/zequn-fireworks/markdown-docx-compiler/blob/main/examples/goggle-offer/offer.md
+[goggle-pdf]: https://github.com/zequn-fireworks/markdown-docx-compiler/blob/main/examples/goggle-offer/offer.pdf
+[goggle-yaml]: https://github.com/zequn-fireworks/markdown-docx-compiler/blob/main/examples/goggle-offer/offer.docx.yaml
+[basethree-example]: https://github.com/zequn-fireworks/markdown-docx-compiler/tree/main/examples/basethree-design-review
+[basethree-md]: https://github.com/zequn-fireworks/markdown-docx-compiler/blob/main/examples/basethree-design-review/design-review.md
+[basethree-pdf]: https://github.com/zequn-fireworks/markdown-docx-compiler/blob/main/examples/basethree-design-review/design-review.pdf
+[basethree-yaml]: https://github.com/zequn-fireworks/markdown-docx-compiler/blob/main/examples/basethree-design-review/design-review.docx.yaml
+[opena1-example]: https://github.com/zequn-fireworks/markdown-docx-compiler/tree/main/examples/opena1-launch-brief
+[opena1-md]: https://github.com/zequn-fireworks/markdown-docx-compiler/blob/main/examples/opena1-launch-brief/launch-brief.md
+[opena1-pdf]: https://github.com/zequn-fireworks/markdown-docx-compiler/blob/main/examples/opena1-launch-brief/launch-brief.pdf
+[opena1-yaml]: https://github.com/zequn-fireworks/markdown-docx-compiler/blob/main/examples/opena1-launch-brief/launch-brief.docx.yaml
 [releasing-doc]: https://github.com/zequn-fireworks/markdown-docx-compiler/blob/main/RELEASING.md

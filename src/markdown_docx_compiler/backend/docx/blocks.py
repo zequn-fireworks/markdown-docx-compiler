@@ -13,7 +13,9 @@ from docx.shared import Inches, Pt
 
 from markdown_docx_compiler.backend.docx.inlines import _stringify_inline, render_inline_nodes
 from markdown_docx_compiler.backend.docx.ooxml_helpers import (
+    continue_list_numbering,
     rgb,
+    restart_list_numbering,
     set_all_fonts,
     set_cell_shading,
     set_cell_vertical_alignment,
@@ -70,6 +72,9 @@ def render_block(
             block_styles,
             config,
             level=0,
+            ordered_num_id=None,
+            ordered_level=-1,
+            ordered_scheme=None,
             content_width_inches=content_width_inches,
             content_width_twips=content_width_twips,
         )
@@ -163,18 +168,51 @@ def _render_list(
     config: DocumentConfig,
     *,
     level: int,
+    ordered_num_id: int | None,
+    ordered_level: int,
+    ordered_scheme: str | None,
     content_width_inches: float,
     content_width_twips: int,
 ) -> None:
     sp = style.spacing or SpacingStyle()
+    local_scheme = _ordered_list_numbering_scheme(style, inherited_scheme=ordered_scheme)
+    current_ordered_level = ordered_level
+    local_ordered_num_id = ordered_num_id
+    active_ordered_scheme = ordered_scheme
+    if block.ordered:
+        if ordered_num_id is not None and ordered_scheme == local_scheme:
+            current_ordered_level = ordered_level + 1
+        else:
+            current_ordered_level = 0
+            local_ordered_num_id = None
+        active_ordered_scheme = local_scheme
 
     for item in block.items:
+        first_paragraph_in_item = True
         for inner in item.blocks:
             inner_style = block_styles.get(inner.meta.index, style)
             if isinstance(inner, Paragraph):
-                para = doc.add_paragraph(style="List Number" if block.ordered else "List Bullet")
+                continuation = not first_paragraph_in_item
+                para = doc.add_paragraph(style=_list_style_name(ordered=block.ordered, level=level, continuation=continuation))
+                if continuation:
+                    base_indent = _continuation_indent_inches(level)
+                else:
+                    if block.ordered:
+                        if local_ordered_num_id is None:
+                            local_ordered_num_id = restart_list_numbering(
+                                para,
+                                scheme=local_scheme,
+                                ilvl=current_ordered_level,
+                            )
+                        else:
+                            continue_list_numbering(
+                                para,
+                                num_id=local_ordered_num_id,
+                                ilvl=current_ordered_level,
+                            )
+                    base_indent = _list_indent_inches(level)
                 inner_sp = inner_style.spacing or SpacingStyle()
-                para.paragraph_format.left_indent = Inches(0.35 * (level + 1) + (inner_sp.indent_left or 0.0))
+                para.paragraph_format.left_indent = Inches(base_indent + (inner_sp.indent_left or 0.0))
                 before = (
                     inner_sp.before if inner_sp.before is not None else (sp.before if sp.before is not None else 2.0)
                 )
@@ -193,6 +231,7 @@ def _render_list(
                     link=inner_style.link or config.link,
                     mono_font=config.mono_font or "Consolas",
                 )
+                first_paragraph_in_item = False
             elif isinstance(inner, List):
                 _render_list(
                     doc,
@@ -201,6 +240,9 @@ def _render_list(
                     block_styles,
                     config,
                     level=level + 1,
+                    ordered_num_id=local_ordered_num_id,
+                    ordered_level=current_ordered_level,
+                    ordered_scheme=active_ordered_scheme,
                     content_width_inches=content_width_inches,
                     content_width_twips=content_width_twips,
                 )
@@ -401,6 +443,33 @@ def _alignment(value: str) -> WD_ALIGN_PARAGRAPH:
         "justify": WD_ALIGN_PARAGRAPH.JUSTIFY,
     }
     return mapping.get(value, WD_ALIGN_PARAGRAPH.LEFT)
+
+
+def _list_style_name(*, ordered: bool, level: int, continuation: bool) -> str:
+    capped_level = min(level, 2)
+    if continuation:
+        base = "List Continue"
+    else:
+        base = "List Number" if ordered else "List Bullet"
+    return base if capped_level == 0 else f"{base} {capped_level + 1}"
+
+
+def _list_indent_inches(level: int) -> float:
+    return 0.35 * (level + 1)
+
+
+def _continuation_indent_inches(level: int) -> float:
+    if level <= 2:
+        return 0.25 * (level + 1)
+    return 0.75 + (0.35 * (level - 2))
+
+
+def _ordered_list_numbering_scheme(style: BlockStyle, *, inherited_scheme: str | None) -> str:
+    if style.list and style.list.numbering:
+        return style.list.numbering
+    if inherited_scheme is not None:
+        return inherited_scheme
+    return "decimal_hierarchical"
 
 
 def _parse_image_width(spec: str, content_width: float) -> float:

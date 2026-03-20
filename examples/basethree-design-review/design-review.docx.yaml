@@ -1,0 +1,190 @@
+document:
+  font:
+    family: Aptos
+    size: 10.5
+    color: "0F172A"
+  mono_font: Menlo
+  link:
+    color: "0F766E"
+    underline: true
+  page:
+    margin: { top: 0.8, bottom: 0.75, left: 0.9, right: 0.9 }
+
+page_header:
+  image: { width: "1.05in" }
+  font: { size: 8, color: "475569" }
+
+page_footer:
+  font: { size: 8, color: "475569" }
+  border:
+    top: { color: "CBD5E1", width: 1, style: single }
+
+defaults:
+  heading:
+    font:
+      family: Aptos
+      color: "0F172A"
+  paragraph:
+    alignment: justify
+    spacing: { after: 6, line: 1.22 }
+  table:
+    table: { header_row: true }
+    border:
+      top: { color: "CBD5E1" }
+      bottom: { color: "CBD5E1" }
+      left: { color: "CBD5E1" }
+      right: { color: "CBD5E1" }
+  code:
+    background: "F8FAFC"
+    spacing: { before: 8, after: 10, line: 1.15 }
+  blockquote:
+    font: { italic: true, color: "115E59" }
+    border:
+      left: { color: "14B8A6", width: 3 }
+    spacing: { before: 8, after: 8, indent_left: 0.25 }
+  image:
+    image: { width: "72%", alignment: center }
+    spacing: { before: 10, after: 10 }
+
+blocks:
+  review-meta:
+    type: table
+    background: "E2E8F0"
+    table:
+      header_row: false
+      columns: [1fr, 2fr]
+      alternating_color: "F8FAFC"
+    border:
+      top: { color: "94A3B8" }
+      bottom: { color: "94A3B8" }
+      left: { color: "94A3B8" }
+      right: { color: "94A3B8" }
+    spacing: { before: 4, after: 12 }
+  summary-callout:
+    type: paragraph
+    background: "ECFEFF"
+    spacing: { before: 2, after: 10, indent_left: 0.15 }
+    font: { color: "134E4A", bold: true }
+  decision-matrix:
+    type: table
+    background: "CCFBF1"
+    table:
+      columns: [3fr, 1fr, 1fr, 1fr, 2fr]
+      alternating_color: "F8FAFC"
+    border:
+      top: { color: "14B8A6" }
+      bottom: { color: "14B8A6" }
+      left: { color: "14B8A6" }
+      right: { color: "14B8A6" }
+    spacing: { before: 8, after: 12 }
+  rollout-checklist:
+    type: list
+    background: "F0FDFA"
+    list:
+      numbering: decimal_hierarchical
+    spacing: { before: 6, after: 10 }
+  phase-note:
+    type: paragraph
+    background: "FFF7ED"
+    spacing: { before: 2, after: 6, indent_left: 0.12 }
+    font: { color: "9A3412", bold: true }
+  gate-table:
+    type: table
+    background: "E0F2FE"
+    table:
+      columns: [2fr, 1fr, 1fr]
+      alternating_color: "F8FAFC"
+    border:
+      top: { color: "0284C7" }
+      bottom: { color: "0284C7" }
+      left: { color: "0284C7" }
+      right: { color: "0284C7" }
+    spacing: { before: 6, after: 10 }
+  policy-snippet:
+    type: code
+    background: "134E4A"
+    spacing: { before: 8, after: 10 }
+    font: { color: "F0FDFA" }
+  rollback-command:
+    type: code
+    background: "0F172A"
+    spacing: { before: 8, after: 12 }
+    font: { color: "E2E8F0" }
+  endpoint-catalog:
+    type: table
+    background: "ECFCCB"
+    table:
+      columns: [3fr, 1fr, 3fr, 1fr]
+      alternating_color: "F7FEE7"
+    border:
+      top: { color: "65A30D" }
+      bottom: { color: "65A30D" }
+      left: { color: "65A30D" }
+      right: { color: "65A30D" }
+    spacing: { before: 8, after: 12 }
+  request-fields:
+    type: table
+    background: "F5F3FF"
+    table:
+      columns: [2fr, 1fr, 1fr, 3fr]
+      alternating_color: "FAF5FF"
+    border:
+      top: { color: "8B5CF6" }
+      bottom: { color: "8B5CF6" }
+      left: { color: "8B5CF6" }
+      right: { color: "8B5CF6" }
+    spacing: { before: 8, after: 12 }
+  request-example:
+    type: code
+    background: "082F49"
+    spacing: { before: 8, after: 10 }
+    font: { color: "E0F2FE" }
+  response-example:
+    type: code
+    background: "1E293B"
+    spacing: { before: 8, after: 10 }
+    font: { color: "E2E8F0" }
+  error-catalog:
+    type: table
+    background: "FEE2E2"
+    table:
+      columns: [2fr, 2fr, 3fr]
+      alternating_color: "FEF2F2"
+    border:
+      top: { color: "DC2626" }
+      bottom: { color: "DC2626" }
+      left: { color: "DC2626" }
+      right: { color: "DC2626" }
+    spacing: { before: 8, after: 12 }
+  risk-register:
+    type: table
+    background: "FEF3C7"
+    table:
+      columns: [2fr, 2fr, 2fr, 1fr]
+      alternating_color: "FFFBEB"
+    border:
+      top: { color: "F59E0B" }
+      bottom: { color: "F59E0B" }
+      left: { color: "F59E0B" }
+      right: { color: "F59E0B" }
+    spacing: { before: 8, after: 12 }
+  architecture-figure:
+    type: image
+    image: { width: "64%", alignment: center }
+    spacing: { before: 10, after: 12 }
+  appendix-break:
+    type: heading
+    page_break_before: true
+    font: { all_caps: true, color: "0F766E" }
+  appendix-table:
+    type: table
+    background: "F1F5F9"
+    table:
+      columns: [2fr, 1fr, 1fr, 1fr, 1fr]
+      alternating_color: "F8FAFC"
+    border:
+      top: { color: "64748B" }
+      bottom: { color: "64748B" }
+      left: { color: "64748B" }
+      right: { color: "64748B" }
+    spacing: { before: 8, after: 12 }

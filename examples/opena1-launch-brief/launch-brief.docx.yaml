@@ -1,0 +1,146 @@
+document:
+  font:
+    family: Georgia
+    size: 11
+    color: "1F2937"
+  mono_font: Menlo
+  link:
+    color: "7C3AED"
+    underline: true
+  page:
+    margin: { top: 0.9, bottom: 0.8, left: 1.1, right: 1.1 }
+
+page_footer:
+  font: { family: Aptos, size: 8, color: "6B7280" }
+  border:
+    top: { color: "DDD6FE", width: 1, style: single }
+
+defaults:
+  heading:
+    font:
+      family: Aptos
+      color: "111827"
+  paragraph:
+    spacing: { after: 7, line: 1.25 }
+  table:
+    table: { header_row: true }
+    border:
+      top: { color: "DDD6FE" }
+      bottom: { color: "DDD6FE" }
+      left: { color: "DDD6FE" }
+      right: { color: "DDD6FE" }
+  blockquote:
+    font: { italic: true, color: "6D28D9", size: 12 }
+    border:
+      left: { color: "8B5CF6", width: 4 }
+    spacing: { before: 8, after: 8, indent_left: 0.35 }
+  code:
+    background: "F5F3FF"
+    spacing: { before: 8, after: 10, line: 1.15 }
+  image:
+    image: { width: "36%", alignment: center }
+    spacing: { before: 6, after: 10 }
+
+blocks:
+  eyebrow:
+    type: paragraph
+    alignment: center
+    spacing: { after: 4 }
+    font:
+      family: Aptos
+      size: 9
+      bold: true
+      small_caps: true
+      color: "7C3AED"
+  hero-mark:
+    type: image
+    image: { width: "48%", alignment: center }
+    spacing: { before: 0, after: 6 }
+  launch-title:
+    type: heading
+    alignment: center
+    spacing: { before: 0, after: 4 }
+    font:
+      family: Aptos
+      size: 24
+      color: "111827"
+  launch-subtitle:
+    type: paragraph
+    alignment: center
+    spacing: { after: 10 }
+    font:
+      family: Georgia
+      italic: true
+      color: "6B7280"
+  launch-summary:
+    type: paragraph
+    alignment: center
+    background: "F5F3FF"
+    spacing: { before: 2, after: 10 }
+    font:
+      color: "4C1D95"
+  narrative-beats:
+    type: list
+    background: "FAF5FF"
+    list:
+      numbering: alpha_paren_hierarchical
+    spacing: { before: 6, after: 10 }
+  tone-note:
+    type: paragraph
+    background: "FEF3C7"
+    spacing: { before: 2, after: 6, indent_left: 0.12 }
+    font:
+      color: "92400E"
+      bold: true
+  snapshot-table:
+    type: table
+    background: "EDE9FE"
+    table:
+      columns: [2fr, 3fr, 1fr, 1fr]
+      alternating_color: "FAF5FF"
+    border:
+      top: { color: "A78BFA" }
+      bottom: { color: "A78BFA" }
+      left: { color: "A78BFA" }
+      right: { color: "A78BFA" }
+    spacing: { before: 8, after: 12 }
+  language-table:
+    type: table
+    background: "FCE7F3"
+    table:
+      columns: [2fr, 2fr, 3fr]
+      alternating_color: "FDF2F8"
+    border:
+      top: { color: "EC4899" }
+      bottom: { color: "EC4899" }
+      left: { color: "EC4899" }
+      right: { color: "EC4899" }
+    spacing: { before: 8, after: 12 }
+  availability-table:
+    type: table
+    background: "DBEAFE"
+    table:
+      columns: [2fr, 3fr, 1fr]
+      alternating_color: "EFF6FF"
+    border:
+      top: { color: "60A5FA" }
+      bottom: { color: "60A5FA" }
+      left: { color: "60A5FA" }
+      right: { color: "60A5FA" }
+    spacing: { before: 8, after: 12 }
+  reader-quote:
+    type: blockquote
+    font: { italic: true, color: "6D28D9", size: 12 }
+    border:
+      left: { color: "8B5CF6", width: 4 }
+  example-copy:
+    type: code
+    background: "312E81"
+    spacing: { before: 8, after: 10 }
+    font: { color: "EDE9FE" }
+  faq-break:
+    type: heading
+    page_break_before: true
+    font:
+      all_caps: true
+      color: "7C3AED"

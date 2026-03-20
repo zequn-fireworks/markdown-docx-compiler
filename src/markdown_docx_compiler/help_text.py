@@ -47,6 +47,8 @@ Place it next to your markdown file as ``<name>.docx.yaml``.
   defaults:
     paragraph:
       spacing: { after: 6, line: 1.15 }
+    list:
+      list: { numbering: decimal_hierarchical }
     table:
       table: { header_row: true, columns: [1fr, 2fr] }
     code:
@@ -59,6 +61,10 @@ Place it next to your markdown file as ``<name>.docx.yaml``.
       table: { columns: [3fr, 1fr, 1fr] }
 
 Anchors in ``blocks:`` target body blocks, including blocks inside list items.
+
+Ordered lists default to hierarchical decimals (``1``, ``1.1``, ``1.2``).
+Use ``list: { numbering: alpha_hierarchical }`` for nested labels like ``2.a``
+or ``list: { numbering: alpha_paren_hierarchical }`` for labels like ``2(a)``.
 
 ## Resolution order
 

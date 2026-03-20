@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import re
 from zipfile import ZipFile
 
 from docx.shared import Inches, Pt
@@ -17,6 +18,8 @@ from markdown_docx_compiler.models.document import (
     BlockMeta,
     Document,
     Heading,
+    List,
+    ListItem,
     Paragraph,
     Region,
     Table,
@@ -29,6 +32,7 @@ from markdown_docx_compiler.models.style import (
     BorderSide,
     BorderStyle,
     FontStyle,
+    ListProps,
 )
 from markdown_docx_compiler.resolve.defaults import DEFAULT_DOCUMENT
 
@@ -144,6 +148,244 @@ class TestDocxRendererRender:
         styles = {1: BlockStyle()}
         doc = renderer.render(ir, block_styles=styles)
         assert len(doc.tables) == 1
+
+    def test_render_list_continuation_paragraph_uses_continue_style(self) -> None:
+        config = DocumentConfig(font=FontStyle(family="Arial", size=11.0))
+        renderer = DocxRenderer(
+            config=config,
+            page_header_style=RegionStyle(),
+            page_footer_style=RegionStyle(),
+            doc_header_style=RegionStyle(),
+        )
+        ir = Document(
+            metadata={},
+            body=[
+                List(
+                    ordered=True,
+                    items=[
+                        ListItem(
+                            blocks=[
+                                Paragraph(content=[TextSpan("Primary item")], meta=BlockMeta(index=1)),
+                                Paragraph(content=[TextSpan("Continuation note")], meta=BlockMeta(index=2)),
+                            ]
+                        )
+                    ],
+                    meta=BlockMeta(index=3),
+                )
+            ],
+        )
+        styles = {
+            1: BlockStyle(),
+            2: BlockStyle(background="FEF3C7"),
+            3: BlockStyle(),
+        }
+
+        doc = renderer.render(ir, block_styles=styles)
+
+        assert doc.paragraphs[0].style.name == "List Number"
+        assert doc.paragraphs[1].style.name == "List Continue"
+        assert doc.paragraphs[1].text == "Continuation note"
+
+    def test_render_separate_ordered_lists_restart_numbering(self, tmp_path: object) -> None:
+        from pathlib import Path
+
+        out = Path(str(tmp_path)) / "lists.docx"
+        config = DocumentConfig(font=FontStyle(family="Arial", size=11.0))
+        renderer = DocxRenderer(
+            config=config,
+            page_header_style=RegionStyle(),
+            page_footer_style=RegionStyle(),
+            doc_header_style=RegionStyle(),
+        )
+        ir = Document(
+            metadata={},
+            body=[
+                List(ordered=True, items=[ListItem(blocks=[Paragraph(content=[TextSpan("First list item")], meta=BlockMeta(index=1))])]),
+                Paragraph(content=[TextSpan("Separator")], meta=BlockMeta(index=2)),
+                List(ordered=True, items=[ListItem(blocks=[Paragraph(content=[TextSpan("Second list item")], meta=BlockMeta(index=3))])]),
+            ],
+        )
+
+        doc = renderer.render(
+            ir,
+            block_styles={
+                1: BlockStyle(),
+                2: BlockStyle(),
+                3: BlockStyle(),
+            },
+        )
+        doc.save(str(out))
+
+        with ZipFile(out) as zf:
+            document_xml = zf.read("word/document.xml").decode("utf-8")
+
+        num_ids = re.findall(r"<w:numId w:val=\"(\d+)\"/>", document_xml)
+        assert len(num_ids) >= 2
+        assert num_ids[0] != num_ids[1]
+
+    def test_render_nested_ordered_lists_use_hierarchical_numbering(self, tmp_path: object) -> None:
+        from pathlib import Path
+
+        out = Path(str(tmp_path)) / "nested-lists.docx"
+        config = DocumentConfig(font=FontStyle(family="Arial", size=11.0))
+        renderer = DocxRenderer(
+            config=config,
+            page_header_style=RegionStyle(),
+            page_footer_style=RegionStyle(),
+            doc_header_style=RegionStyle(),
+        )
+        ir = Document(
+            metadata={},
+            body=[
+                List(
+                    ordered=True,
+                    items=[
+                        ListItem(
+                            blocks=[
+                                Paragraph(content=[TextSpan("Parent item")], meta=BlockMeta(index=1)),
+                                List(
+                                    ordered=True,
+                                    items=[
+                                        ListItem(blocks=[Paragraph(content=[TextSpan("Child item")], meta=BlockMeta(index=2))]),
+                                    ],
+                                    meta=BlockMeta(index=3),
+                                ),
+                            ]
+                        )
+                    ],
+                    meta=BlockMeta(index=4),
+                )
+            ],
+        )
+
+        doc = renderer.render(
+            ir,
+            block_styles={
+                1: BlockStyle(),
+                2: BlockStyle(),
+                3: BlockStyle(),
+                4: BlockStyle(),
+            },
+        )
+        doc.save(str(out))
+
+        with ZipFile(out) as zf:
+            document_xml = zf.read("word/document.xml").decode("utf-8")
+            numbering_xml = zf.read("word/numbering.xml").decode("utf-8")
+
+        num_entries = re.findall(r"<w:numPr><w:ilvl w:val=\"(\d+)\"/><w:numId w:val=\"(\d+)\"/></w:numPr>", document_xml)
+        assert len(num_entries) >= 2
+        assert num_entries[0][0] == "0"
+        assert num_entries[1][0] == "1"
+        assert num_entries[0][1] == num_entries[1][1]
+        assert 'w:name w:val="mdc-decimal_hierarchical"' in numbering_xml
+        assert 'w:lvlText w:val="%1.%2"' in numbering_xml
+
+    def test_render_alpha_paren_numbering_scheme(self, tmp_path: object) -> None:
+        from pathlib import Path
+
+        out = Path(str(tmp_path)) / "alpha-paren.docx"
+        config = DocumentConfig(font=FontStyle(family="Arial", size=11.0))
+        renderer = DocxRenderer(
+            config=config,
+            page_header_style=RegionStyle(),
+            page_footer_style=RegionStyle(),
+            doc_header_style=RegionStyle(),
+        )
+        list_style = BlockStyle(list=ListProps(numbering="alpha_paren_hierarchical"))
+        ir = Document(
+            metadata={},
+            body=[
+                List(
+                    ordered=True,
+                    items=[
+                        ListItem(
+                            blocks=[
+                                Paragraph(content=[TextSpan("Parent item")], meta=BlockMeta(index=1)),
+                                List(
+                                    ordered=True,
+                                    items=[
+                                        ListItem(blocks=[Paragraph(content=[TextSpan("Child item")], meta=BlockMeta(index=2))]),
+                                    ],
+                                    meta=BlockMeta(index=3),
+                                ),
+                            ]
+                        )
+                    ],
+                    meta=BlockMeta(index=4),
+                )
+            ],
+        )
+
+        doc = renderer.render(
+            ir,
+            block_styles={
+                1: BlockStyle(),
+                2: BlockStyle(),
+                3: list_style,
+                4: list_style,
+            },
+        )
+        doc.save(str(out))
+
+        with ZipFile(out) as zf:
+            numbering_xml = zf.read("word/numbering.xml").decode("utf-8")
+
+        assert 'w:name w:val="mdc-alpha_paren_hierarchical"' in numbering_xml
+        assert 'w:lvlText w:val="%1(%2)"' in numbering_xml
+
+    def test_render_alpha_hierarchical_numbering_scheme(self, tmp_path: object) -> None:
+        from pathlib import Path
+
+        out = Path(str(tmp_path)) / "alpha-hierarchical.docx"
+        config = DocumentConfig(font=FontStyle(family="Arial", size=11.0))
+        renderer = DocxRenderer(
+            config=config,
+            page_header_style=RegionStyle(),
+            page_footer_style=RegionStyle(),
+            doc_header_style=RegionStyle(),
+        )
+        list_style = BlockStyle(list=ListProps(numbering="alpha_hierarchical"))
+        ir = Document(
+            metadata={},
+            body=[
+                List(
+                    ordered=True,
+                    items=[
+                        ListItem(
+                            blocks=[
+                                Paragraph(content=[TextSpan("Parent item")], meta=BlockMeta(index=1)),
+                                List(
+                                    ordered=True,
+                                    items=[
+                                        ListItem(blocks=[Paragraph(content=[TextSpan("Child item")], meta=BlockMeta(index=2))]),
+                                    ],
+                                    meta=BlockMeta(index=3),
+                                ),
+                            ]
+                        )
+                    ],
+                    meta=BlockMeta(index=4),
+                )
+            ],
+        )
+
+        doc = renderer.render(
+            ir,
+            block_styles={
+                1: BlockStyle(),
+                2: BlockStyle(),
+                3: list_style,
+                4: list_style,
+            },
+        )
+        doc.save(str(out))
+
+        with ZipFile(out) as zf:
+            numbering_xml = zf.read("word/numbering.xml").decode("utf-8")
+
+        assert 'w:name w:val="mdc-alpha_hierarchical"' in numbering_xml
+        assert 'w:lvlText w:val="%1.%2"' in numbering_xml
 
     def test_render_with_page_footer(self, tmp_path: object) -> None:
         config = DocumentConfig(font=FontStyle(family="Arial", size=11.0))

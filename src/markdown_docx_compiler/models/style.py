@@ -89,6 +89,13 @@ class ImageProps:
 
 
 @dataclass(frozen=True)
+class ListProps:
+    """Ordered-list numbering properties."""
+
+    numbering: str | None = None  # decimal_hierarchical | alpha_hierarchical | alpha_paren_hierarchical
+
+
+@dataclass(frozen=True)
 class TableProps:
     """Table-specific layout and visual properties."""
 
@@ -124,4 +131,5 @@ class BlockStyle:
 
     link: LinkStyle | None = None
     image: ImageProps | None = None
+    list: ListProps | None = None
     table: TableProps | None = None
