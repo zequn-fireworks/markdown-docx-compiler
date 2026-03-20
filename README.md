@@ -69,8 +69,15 @@ trademark issues.
 
 ```bash
 pip install markdown-docx-compiler
-# or install the CLI with uv
+# or install the CLI with uv / pipx
 uv tool install markdown-docx-compiler
+pipx install markdown-docx-compiler
+```
+
+Verify the install:
+
+```bash
+mdc --help
 ```
 
 Compile a document:
