@@ -5,27 +5,29 @@ Each subdirectory is a self-contained document project showing how
 
 | Example | Description |
 |---------|-------------|
-| `google-offer/` | Formal offer letter with company logo header and compensation table |
-| `openai-offer/` | Offer letter with two-column doc header and equity details |
+| `goggle-offer/` | Formal offer letter with company logo header, doc header slots, and compensation table |
+| `basethree-design-review/` | Engineering design review with shaded summary, wide decision table, risk register, code block, and appendix page break |
+| `opena1-launch-brief/` | Bilingual launch brief with centered title styling, editorial callouts, compact tables, and minimal region chrome |
 
-> **Note:** Company names are fictionalized ("Goggle", "OpenA1") to avoid
+> **Note:** Company names are fictionalized ("Goggle", "Basethree", "OpenA1") to avoid
 > trademark issues. These examples are for demonstration purposes only.
 
 ## Structure
 
 Each example contains:
 
-- `offer.md` — source markdown with front matter and region tags
-- `offer.docx.yaml` — sidecar config controlling fonts, spacing, and layout
-- `logo.png` — company logo referenced by the page header
-- `offer.docx` — pre-compiled output (regenerate with the command below)
-- `offer.pdf` — PDF rendering of the compiled document
+- a primary markdown source file (`offer.md`, `design-review.md`, or `launch-brief.md`)
+- a matching sidecar config (`*.docx.yaml`) controlling fonts, spacing, and layout
+- `logo.png` or another image asset referenced by the document
+- a generated `.docx` output
+- a generated `.pdf` rendering of that output
 
 ## Recompiling
 
 From the repo root:
 
 ```bash
-uv run mdc doc create examples/google-offer/offer.md
-uv run mdc doc create examples/openai-offer/offer.md
+uv run mdc doc create examples/goggle-offer/offer.md
+uv run mdc doc create examples/basethree-design-review/design-review.md
+uv run mdc doc create examples/opena1-launch-brief/launch-brief.md
 ```

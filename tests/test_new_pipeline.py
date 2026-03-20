@@ -84,8 +84,8 @@ class TestSidecarLoading:
         assert "paragraph" in config.defaults
         assert "results-table" in config.blocks
 
-    def test_load_google_offer(self) -> None:
-        path = Path(__file__).parent.parent / "examples" / "google-offer" / "offer.docx.yaml"
+    def test_load_goggle_offer(self) -> None:
+        path = Path(__file__).parent.parent / "examples" / "goggle-offer" / "offer.docx.yaml"
         config = load_sidecar(path)
         assert config.document.font.family == "Arial"
         assert config.page_header.image is not None
@@ -266,8 +266,8 @@ class TestCompilation:
         assert result.block_count > 0
         assert output.exists()
 
-    def test_google_offer(self, tmp_path: Path) -> None:
-        offer_dir = Path(__file__).parent.parent / "examples" / "google-offer"
+    def test_goggle_offer(self, tmp_path: Path) -> None:
+        offer_dir = Path(__file__).parent.parent / "examples" / "goggle-offer"
         output = tmp_path / "offer.docx"
         result = compile_markdown_file(
             input_path=offer_dir / "offer.md",

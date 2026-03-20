@@ -1,0 +1,74 @@
+document:
+  font:
+    family: Arial
+    size: 10.5
+    color: "202124"
+  link:
+    color: "1a73e8"
+  page:
+    margin: { top: 0.8, bottom: 0.75, left: 1.0, right: 1.0 }
+
+page_header:
+  image: { width: "1.8in" }
+
+page_footer:
+  font: { size: 8, color: "5F6368" }
+  border:
+    top: { color: "DADCE0", width: 1, style: single }
+
+doc_header:
+  font: { size: 9, color: "5F6368" }
+
+defaults:
+  heading:
+    font: { family: Arial, color: "174EA6" }
+  paragraph:
+    spacing: { after: 6, line: 1.15 }
+  blockquote:
+    font: { italic: true, color: "5F6368" }
+    border:
+      left: { color: "AECBFA", width: 3 }
+  image:
+    image: { width: "44%", alignment: center }
+    spacing: { before: 8, after: 10 }
+  table:
+    table: { header_row: true }
+    border:
+      top: { color: "DADCE0" }
+      bottom: { color: "DADCE0" }
+      left: { color: "DADCE0" }
+      right: { color: "DADCE0" }
+
+blocks:
+  packet-overview:
+    type: list
+    background: "F8FBFF"
+    spacing: { before: 6, after: 8 }
+  question-note:
+    type: paragraph
+    background: "FEF7E0"
+    spacing: { before: 2, after: 6, indent_left: 0.12 }
+    font: { color: "8A4B00", bold: true }
+  comp-table:
+    type: table
+    background: "F8FAFD"
+    table: { columns: [1fr, 3fr] }
+    spacing: { before: 8, after: 12 }
+  support-table:
+    type: table
+    background: "E8F0FE"
+    table:
+      columns: [1fr, 1fr, 3fr]
+      alternating_color: "F8FBFF"
+    spacing: { before: 8, after: 12 }
+  start-week-table:
+    type: table
+    background: "E6F4EA"
+    table:
+      columns: [1fr, 2fr, 2fr]
+      alternating_color: "F6FFF8"
+    spacing: { before: 8, after: 12 }
+  confirmation-template:
+    type: code
+    background: "F1F3F4"
+    spacing: { before: 8, after: 10 }
