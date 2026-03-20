@@ -10,7 +10,7 @@ from markdown_docx_compiler import __version__
 
 def build_discovery_payload() -> dict[str, Any]:
     """Build the machine-readable discovery payload returned by ``mdc --json``."""
-    from markdown_docx_compiler.sidecar import BlockStyle, SelectorMatch
+    from markdown_docx_compiler.models.style import BlockStyle
     from markdown_docx_compiler.styles.themes import DEFAULT_THEME
 
     doc = DEFAULT_THEME.document
@@ -40,11 +40,6 @@ def build_discovery_payload() -> dict[str, Any]:
                         "flags": {
                             "--output-file/-o": "Output DOCX path",
                             "--spec": "Sidecar YAML path",
-                            "--template": "Template name",
-                            "--logo": "Logo image path",
-                            "--footer-left": "Footer left text",
-                            "--footer-center": "Footer center text",
-                            "--footer-right": "Footer right text",
                         },
                     },
                     "validate": {
@@ -52,7 +47,6 @@ def build_discovery_payload() -> dict[str, Any]:
                         "args": {"input": "Markdown file path"},
                         "flags": {
                             "--spec": "Sidecar YAML path",
-                            "--template": "Template name",
                         },
                     },
                 },
@@ -67,7 +61,6 @@ def build_discovery_payload() -> dict[str, Any]:
                         "flags": {
                             "--for": "Discover sidecar for this markdown file",
                             "--resolved": "Show fully merged config",
-                            "--template": "Template name (with --resolved)",
                         },
                     },
                     "validate": {
@@ -121,34 +114,26 @@ def build_discovery_payload() -> dict[str, Any]:
                 "list",
                 "image",
                 "heading",
+                "horizontal_rule",
             ],
             "front_matter_keys": {
                 "title": "str",
-                "template": "str",
-                "logo_path": "str",
                 "font": "str",
                 "mono_font": "str",
-                "primary_color": "str",
                 "text_color": "str",
-                "muted_color": "str",
-                "border_color": "str",
+                "link_color": "str",
                 "page_width_inches": "float",
-                "footer_left": "str",
-                "footer_center": "str",
-                "footer_right": "str",
-                "margin_top_inches": "float",
-                "margin_bottom_inches": "float",
-                "margin_left_inches": "float",
-                "margin_right_inches": "float",
+                "margin_top": "float",
+                "margin_bottom": "float",
+                "margin_left": "float",
+                "margin_right": "float",
             },
             "block_style_properties": [f.name for f in dataclasses.fields(BlockStyle)],
-            "selector_match_fields": [f.name for f in dataclasses.fields(SelectorMatch)],
             "resolution_order": [
-                "template brand defaults (fonts, colors, variants)",
-                "template layout defaults (margins, footer, block defaults)",
-                "sidecar overrides (block-type defaults, selectors, anchor blocks)",
+                "built-in defaults (fonts, colors, margins)",
+                "sidecar document globals + type defaults",
+                "sidecar block instance overrides (by anchor)",
                 "front matter overrides",
-                "CLI flag overrides",
             ],
         },
         "hint": "Run `mdc <noun> --help` for detailed reference documentation.",

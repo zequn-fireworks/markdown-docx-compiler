@@ -1,4 +1,4 @@
-"""End-to-end tests using the real benchmark fixtures from the Fireworks repo."""
+"""End-to-end tests using the real benchmark fixtures."""
 
 from __future__ import annotations
 
@@ -6,9 +6,9 @@ from pathlib import Path
 from zipfile import ZipFile
 
 from markdown_docx_compiler import compile_markdown_file
-from markdown_docx_compiler.ir import (
-    HeadingBlock,
-    TableBlock,
+from markdown_docx_compiler.models.document import (
+    Heading,
+    Table,
 )
 from markdown_docx_compiler.parser import extract_front_matter, parse_markdown
 
@@ -22,14 +22,14 @@ def test_benchmark_en_parses_all_block_types() -> None:
 
     assert meta["title"] == "Kimi K2.5 Inference Benchmark — B200 vs B300 (Disaggregated 8+8)"
 
-    block_types = {type(b).__name__ for b in doc.blocks}
-    assert "HeadingBlock" in block_types
-    assert "TableBlock" in block_types
-    assert "HorizontalRuleBlock" in block_types
-    assert "ImageBlock" in block_types
-    assert "ListBlock" in block_types
+    block_types = {type(b).__name__ for b in doc.body}
+    assert "Heading" in block_types
+    assert "Table" in block_types
+    assert "HorizontalRule" in block_types
+    assert "Image" in block_types
+    assert "List" in block_types
 
-    tables = [b for b in doc.blocks if isinstance(b, TableBlock)]
+    tables = [b for b in doc.body if isinstance(b, Table)]
     assert len(tables) >= 4
     b200_table = tables[2]
     assert b200_table.column_count == 7
@@ -41,13 +41,13 @@ def test_benchmark_zh_parses_cjk_content() -> None:
     meta, body = extract_front_matter(md_path.read_text(encoding="utf-8"))
     doc = parse_markdown(body, metadata=meta, md_dir=str(md_path.parent))
 
-    assert "推理基准测试" in meta["title"]
+    assert "\u63a8\u7406\u57fa\u51c6\u6d4b\u8bd5" in meta["title"]
 
-    tables = [b for b in doc.blocks if isinstance(b, TableBlock)]
+    tables = [b for b in doc.body if isinstance(b, Table)]
     assert len(tables) >= 3
 
-    headings = [b for b in doc.blocks if isinstance(b, HeadingBlock)]
-    assert any("客户目标" in h.content[0].value for h in headings if hasattr(h.content[0], "value"))
+    headings = [b for b in doc.body if isinstance(b, Heading)]
+    assert any("\u5ba2\u6237\u76ee\u6807" in h.content[0].text for h in headings if hasattr(h.content[0], "text"))
 
 
 def test_benchmark_en_compiles_to_docx(tmp_path: Path) -> None:

@@ -11,36 +11,31 @@ HELP_TOPIC = """\
 # Front Matter
 
 Use YAML front matter for document-level metadata.  Front matter overrides
-theme defaults but is itself overridden by sidecar config and CLI flags.
+built-in defaults but is itself overridden by sidecar config.
 
 ## Example
 
   ---
   title: Benchmark Report
-  template: fireworks-rca
-  footer_center: 2026-03-16
-  logo_path: ./figures/logo.png
+  font: Arial
+  text_color: "333333"
   ---
 
 ## Supported keys
 
   title                str    Document title
-  template             str    Template name (e.g. "fireworks-rca")
-  logo_path            str    Path to logo image (relative to markdown file)
-  font                 str    Body font name
+  font                 str    Body font family name
   mono_font            str    Monospace font name
-  primary_color        str    Hex color without # (e.g. "6720FF")
-  text_color           str    Hex color for body text
-  muted_color          str    Hex color for secondary text
-  border_color         str    Hex color for borders
+  text_color           str    Hex color for body text (e.g. "333333")
+  link_color           str    Hex color for links (e.g. "2563EB")
   page_width_inches    float  Page width in inches (default 8.5)
-  footer_left          str    Footer left text
-  footer_center        str    Footer center text
-  footer_right         str    Footer right text
-  margin_top_inches    float  Top margin in inches
-  margin_bottom_inches float  Bottom margin in inches
-  margin_left_inches   float  Left margin in inches
-  margin_right_inches  float  Right margin in inches
+  margin_top           float  Top margin in inches
+  margin_bottom        float  Bottom margin in inches
+  margin_left          float  Left margin in inches
+  margin_right         float  Right margin in inches
+
+Note: for advanced layout (logos, footers, headers, per-block styling),
+use region tags in markdown and a sidecar YAML.  See `mdc doc --help`.
 """
 
 _FRONT_MATTER_RE = re.compile(r"\A---\s*\n(.+?)\n---\s*\n", re.DOTALL)

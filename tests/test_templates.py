@@ -6,17 +6,15 @@ from pathlib import Path
 
 import pytest
 
-from markdown_docx_compiler.selectors import resolve_document_config
-from markdown_docx_compiler.sidecar import (
-    BlockStyle,
+from markdown_docx_compiler.models.config import (
+    BlockOverride,
     DocumentConfig,
-    FooterConfig,
-    SelectorMatch,
-    SelectorRule,
     SidecarConfig,
-    _parse_sidecar_payload,
-    merge_sidecar_config,
 )
+from markdown_docx_compiler.models.loader import _parse_sidecar_payload
+from markdown_docx_compiler.models.style import BlockStyle, FontStyle, SpacingStyle
+from markdown_docx_compiler.resolve.cascade import resolve_document_config
+from markdown_docx_compiler.resolve.merge import merge_sidecar_config
 from markdown_docx_compiler.styles.themes import (
     _reset_template_cache,
     get_template,
@@ -91,90 +89,89 @@ class TestLoadBrandYaml:
 
 
 # ---------------------------------------------------------------------------
-# parse_sidecar_payload (extracted for template layout loading)
+# _parse_sidecar_payload (new pipeline)
 # ---------------------------------------------------------------------------
 
 
 class TestParseSidecarPayload:
-    def test_reads_template_field(self) -> None:
-        config = _parse_sidecar_payload({"template": "fireworks-rca"})
-        assert config.template == "fireworks-rca"
+    def test_reads_extend_field(self) -> None:
+        config = _parse_sidecar_payload({"extend": "acme-report"})
+        assert config.extend == "acme-report"
 
-    def test_template_none_when_absent(self) -> None:
+    def test_extend_none_when_absent(self) -> None:
         config = _parse_sidecar_payload({})
-        assert config.template is None
+        assert config.extend is None
 
 
 # ---------------------------------------------------------------------------
-# merge_sidecar_config
+# merge_sidecar_config (new pipeline)
 # ---------------------------------------------------------------------------
 
 
 class TestMergeSidecarConfig:
     def test_document_merge(self) -> None:
-        base = SidecarConfig(document=DocumentConfig(font="Arial", footer=FooterConfig(left="Base")))
-        override = SidecarConfig(document=DocumentConfig(footer=FooterConfig(left="Override")))
+        base = SidecarConfig(
+            document=DocumentConfig(font=FontStyle(family="Arial")),
+        )
+        override = SidecarConfig(
+            document=DocumentConfig(title="Override Title"),
+        )
         merged = merge_sidecar_config(base, override)
-        assert merged.document.font == "Arial"
-        assert merged.document.footer.left == "Override"
+        assert merged.document.font.family == "Arial"
+        assert merged.document.title == "Override Title"
 
     def test_defaults_merge(self) -> None:
         base = SidecarConfig(
             defaults={
-                "paragraph": BlockStyle(variant="body", line_spacing=1.25),
-                "table": BlockStyle(variant="standard"),
+                "paragraph": BlockStyle(spacing=SpacingStyle(line=1.25)),
+                "table": BlockStyle(width="full"),
             }
         )
         override = SidecarConfig(
             defaults={
-                "paragraph": BlockStyle(line_spacing=1.5),
-                "code": BlockStyle(font_size=10.0),
+                "paragraph": BlockStyle(spacing=SpacingStyle(line=1.5)),
+                "code": BlockStyle(font=FontStyle(size=10.0)),
             }
         )
         merged = merge_sidecar_config(base, override)
-        assert merged.defaults["paragraph"].variant == "body"
-        assert merged.defaults["paragraph"].line_spacing == 1.5
-        assert merged.defaults["table"].variant == "standard"
-        assert merged.defaults["code"].font_size == 10.0
-
-    def test_selectors_concatenated(self) -> None:
-        rule1 = SelectorRule(match=SelectorMatch(type="paragraph"), apply=BlockStyle(bold=True))
-        rule2 = SelectorRule(match=SelectorMatch(type="table"), apply=BlockStyle(width="full"))
-        base = SidecarConfig(selectors=[rule1])
-        override = SidecarConfig(selectors=[rule2])
-        merged = merge_sidecar_config(base, override)
-        assert len(merged.selectors) == 2
-        assert merged.selectors[0].match.type == "paragraph"
-        assert merged.selectors[1].match.type == "table"
+        assert merged.defaults["paragraph"].spacing.line == 1.5
+        assert merged.defaults["table"].width == "full"
+        assert merged.defaults["code"].font.size == 10.0
 
     def test_blocks_merge(self) -> None:
-        base = SidecarConfig(blocks={"my-table": BlockStyle(variant="standard", width="full")})
+        base = SidecarConfig(
+            blocks={
+                "my-table": BlockOverride(type="table", style=BlockStyle(width="full")),
+            }
+        )
         override = SidecarConfig(
             blocks={
-                "my-table": BlockStyle(columns=["3fr", "1fr"]),
-                "new-block": BlockStyle(bold=True),
+                "my-table": BlockOverride(
+                    style=BlockStyle(table=None),
+                ),
+                "new-block": BlockOverride(style=BlockStyle(font=FontStyle(bold=True))),
             }
         )
         merged = merge_sidecar_config(base, override)
-        assert merged.blocks["my-table"].variant == "standard"
-        assert merged.blocks["my-table"].columns == ["3fr", "1fr"]
-        assert merged.blocks["new-block"].bold is True
+        assert merged.blocks["my-table"].type == "table"
+        assert merged.blocks["my-table"].style.width == "full"
+        assert merged.blocks["new-block"].style.font.bold is True
 
-    def test_template_from_override_wins(self) -> None:
-        base = SidecarConfig(template="base-template")
-        override = SidecarConfig(template="override-template")
+    def test_extend_from_override_wins(self) -> None:
+        base = SidecarConfig(extend="base-template")
+        override = SidecarConfig(extend="override-template")
         merged = merge_sidecar_config(base, override)
-        assert merged.template == "override-template"
+        assert merged.extend == "override-template"
 
-    def test_template_falls_back_to_base(self) -> None:
-        base = SidecarConfig(template="base-template")
+    def test_extend_falls_back_to_base(self) -> None:
+        base = SidecarConfig(extend="base-template")
         override = SidecarConfig()
         merged = merge_sidecar_config(base, override)
-        assert merged.template == "base-template"
+        assert merged.extend == "base-template"
 
 
 # ---------------------------------------------------------------------------
-# Entry-point discovery (using actually installed fireworks package)
+# Entry-point discovery
 # ---------------------------------------------------------------------------
 
 
@@ -185,26 +182,19 @@ class TestTemplateDiscovery:
         yield
         _reset_template_cache()
 
-    def test_fireworks_default_template_discovered(self) -> None:
-        result = get_template("fireworks")
+    def test_default_template_always_available(self) -> None:
+        result = get_template("default")
         assert result is not None
-        theme, sidecar = result
-        assert theme.name == "fireworks"
-        assert theme.document.font == "Helvetica Neue"
-        assert sidecar.defaults.get("paragraph") is not None
-
-    def test_fireworks_rca_template_discovered(self) -> None:
-        result = get_template("fireworks-rca")
-        assert result is not None
-        theme, sidecar = result
-        assert theme.name == "fireworks"
-        assert len(sidecar.selectors) >= 1
+        theme, layout = result
+        assert theme.name == "default"
+        assert theme.document.font == "Aptos"
+        assert layout.defaults.get("paragraph") is not None
 
     def test_unknown_template_returns_none(self) -> None:
         assert get_template("nonexistent-template") is None
 
-    def test_brand_variants_loaded(self) -> None:
-        result = get_template("fireworks")
+    def test_default_brand_variants_loaded(self) -> None:
+        result = get_template("default")
         assert result is not None
         theme, _ = result
         assert "paragraph" in theme.variants
@@ -212,127 +202,42 @@ class TestTemplateDiscovery:
         assert "table" in theme.variants
         assert "benchmark" in theme.variants["table"]
 
-    def test_brand_logo_is_none(self) -> None:
-        result = get_template("fireworks")
-        assert result is not None
-        theme, _ = result
-        assert theme.document.logo_path is None
-
-    def test_template_layout_has_footer(self) -> None:
-        result = get_template("fireworks")
-        assert result is not None
-        _, sidecar = result
-        assert sidecar.document.footer.left == "Fireworks AI  |  Confidential"
-
 
 # ---------------------------------------------------------------------------
-# Resolution with templates
+# Resolution
 # ---------------------------------------------------------------------------
 
 
-class TestResolveWithTemplate:
-    @pytest.fixture(autouse=True)
-    def _clear_cache(self) -> None:
-        _reset_template_cache()
-        yield
-        _reset_template_cache()
-
-    def test_template_from_sidecar(self) -> None:
-        sidecar = SidecarConfig(template="fireworks-rca")
-        theme, config, _resolved = resolve_document_config(
-            front_matter={},
-            sidecar=sidecar,
-            base_dir=Path("."),
-        )
-        assert theme.name == "fireworks"
-        assert config.font == "Helvetica Neue"
-        assert config.footer.left == "Fireworks AI  |  Confidential"
-
-    def test_template_from_front_matter(self) -> None:
-        theme, config, _resolved = resolve_document_config(
-            front_matter={"template": "fireworks"},
-            sidecar=SidecarConfig(),
-            base_dir=Path("."),
-        )
-        assert theme.name == "fireworks"
-        assert config.font == "Helvetica Neue"
-
-    def test_template_from_cli_override(self) -> None:
-        theme, _config, _resolved = resolve_document_config(
-            front_matter={},
-            sidecar=SidecarConfig(),
-            template_override="fireworks",
-            base_dir=Path("."),
-        )
-        assert theme.name == "fireworks"
-
-    def test_user_sidecar_overrides_template_footer(self) -> None:
+class TestResolveDocumentConfig:
+    def test_sidecar_overrides_defaults(self) -> None:
         sidecar = SidecarConfig(
-            template="fireworks",
-            document=DocumentConfig(footer=FooterConfig(center="2026-03-16", right="Draft")),
+            document=DocumentConfig(font=FontStyle(family="Courier")),
         )
-        _theme, config, _resolved = resolve_document_config(
-            front_matter={},
+        doc_config, _resolved = resolve_document_config(
             sidecar=sidecar,
+            front_matter={},
             base_dir=Path("."),
         )
-        assert config.footer.left == "Fireworks AI  |  Confidential"
-        assert config.footer.center == "2026-03-16"
-        assert config.footer.right == "Draft"
+        assert doc_config.font.family == "Courier"
 
-    def test_user_sidecar_overrides_template_defaults(self) -> None:
+    def test_front_matter_overrides_sidecar(self) -> None:
         sidecar = SidecarConfig(
-            template="fireworks",
-            defaults={"paragraph": BlockStyle(line_spacing=1.5)},
+            document=DocumentConfig(font=FontStyle(family="Arial")),
         )
-        _theme, _config, resolved = resolve_document_config(
-            front_matter={},
+        doc_config, _ = resolve_document_config(
             sidecar=sidecar,
+            front_matter={"font": "Times"},
             base_dir=Path("."),
         )
-        assert resolved.defaults["paragraph"].line_spacing == 1.5
-        assert resolved.defaults["paragraph"].variant == "body"
+        assert doc_config.font.family == "Times"
 
-    def test_user_logo_overrides_null_template_logo(self) -> None:
-        sidecar = SidecarConfig(
-            template="fireworks",
-            document=DocumentConfig(logo_path="/abs/path/logo.png"),
-        )
-        _theme, config, _resolved = resolve_document_config(
-            front_matter={},
-            sidecar=sidecar,
-            base_dir=Path("."),
-        )
-        assert config.logo_path == "/abs/path/logo.png"
-
-    def test_unknown_template_falls_back_to_default_theme(self) -> None:
-        sidecar = SidecarConfig(template="nonexistent")
-        theme, _config, _resolved = resolve_document_config(
-            front_matter={},
-            sidecar=sidecar,
-            base_dir=Path("."),
-        )
-        assert theme.name == "default"
-
-    def test_template_override_takes_priority(self) -> None:
-        sidecar = SidecarConfig(template="nonexistent")
-        theme, _config, _resolved = resolve_document_config(
-            front_matter={"template": "also-nonexistent"},
-            sidecar=sidecar,
-            template_override="fireworks",
-            base_dir=Path("."),
-        )
-        assert theme.name == "fireworks"
-
-
-class TestNoTemplateUsesDefault:
-    def test_no_template_uses_default(self) -> None:
-        theme, _config, _resolved = resolve_document_config(
-            front_matter={},
+    def test_empty_sidecar_uses_builtin_defaults(self) -> None:
+        doc_config, _ = resolve_document_config(
             sidecar=SidecarConfig(),
+            front_matter={},
             base_dir=Path("."),
         )
-        assert theme.name == "default"
+        assert doc_config.font.family is not None
 
 
 # ---------------------------------------------------------------------------
@@ -349,8 +254,8 @@ class TestTemplatesHelpTopic:
 
     def test_contains_install_instructions(self) -> None:
         text = templates_help_topic()
-        assert "uv add" in text
+        assert "uv add" in text or "Install" in text
 
-    def test_lists_discovered_templates(self) -> None:
+    def test_shows_none_installed_when_empty(self) -> None:
         text = templates_help_topic()
-        assert "fireworks" in text
+        assert "none installed" in text

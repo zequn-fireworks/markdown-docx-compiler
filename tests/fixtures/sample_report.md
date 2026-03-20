@@ -1,8 +1,15 @@
 ---
 title: Sample Report
-template: fireworks
-footer_center: 2026-03-16
 ---
+
+<!-- docx:page_footer.left -->
+Confidential
+
+<!-- docx:page_footer.center -->
+2026-03-16
+
+<!-- docx:page_footer.right -->
+Draft
 
 # Sample Report
 

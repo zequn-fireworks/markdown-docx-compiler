@@ -13,18 +13,17 @@ import pytest
 
 from markdown_docx_compiler import HELP_TOPIC as OVERVIEW_TOPIC
 from markdown_docx_compiler.help_text import (
+    HELP_TOPIC_SIDECAR,
     VALID_TOPICS,
     build_help_json,
     get_help_text,
 )
+from markdown_docx_compiler.models.style import BlockStyle
 from markdown_docx_compiler.parser.front_matter import HELP_TOPIC as FM_TOPIC
-from markdown_docx_compiler.parser.markdown_parser import (
+from markdown_docx_compiler.parser.markdown import (
     HELP_TOPIC_ANCHORS,
     HELP_TOPIC_MARKDOWN,
 )
-from markdown_docx_compiler.selectors import HELP_TOPIC as SEL_TOPIC
-from markdown_docx_compiler.sidecar import HELP_TOPIC as SIDECAR_TOPIC
-from markdown_docx_compiler.sidecar import BlockStyle, SelectorMatch
 from markdown_docx_compiler.styles.themes import DEFAULT_THEME
 from markdown_docx_compiler.styles.themes import help_topic as themes_help_topic
 
@@ -34,11 +33,10 @@ from markdown_docx_compiler.styles.themes import help_topic as themes_help_topic
 
 _MODULE_TOPICS = {
     "__init__": OVERVIEW_TOPIC,
-    "sidecar": SIDECAR_TOPIC,
-    "selectors": SEL_TOPIC,
+    "sidecar": HELP_TOPIC_SIDECAR,
     "front_matter": FM_TOPIC,
-    "markdown_parser (markdown)": HELP_TOPIC_MARKDOWN,
-    "markdown_parser (anchors)": HELP_TOPIC_ANCHORS,
+    "markdown (markdown)": HELP_TOPIC_MARKDOWN,
+    "markdown (anchors)": HELP_TOPIC_ANCHORS,
 }
 
 
@@ -71,7 +69,8 @@ class TestGetHelpText:
     def test_none_returns_overview(self) -> None:
         text = get_help_text(None)
         assert "# markdown-docx-compiler" in text
-        assert "mdc document create" in text
+        assert "mdc doc create" in text
+        assert "<input>.docx" in text
 
     @pytest.mark.parametrize("topic", VALID_TOPICS)
     def test_every_valid_topic_resolves(self, topic: str) -> None:
@@ -82,6 +81,11 @@ class TestGetHelpText:
     def test_themes_topic_includes_default_brand(self) -> None:
         text = get_help_text("themes")
         assert DEFAULT_THEME.document.font in text
+
+    def test_templates_topic_avoids_nonexistent_template_flag(self) -> None:
+        text = get_help_text("templates")
+        assert "--template" not in text
+        assert "mdc template list" in text
 
     def test_unknown_topic_raises_value_error(self) -> None:
         with pytest.raises(ValueError, match="Unknown topic"):
@@ -155,7 +159,6 @@ class TestBuildHelpJson:
         assert "block_types" in ref
         assert "front_matter_keys" in ref
         assert "block_style_properties" in ref
-        assert "selector_match_fields" in ref
         assert "resolution_order" in ref
 
 
@@ -177,10 +180,6 @@ class TestHelpJsonConsistency:
         actual = [f.name for f in dataclasses.fields(BlockStyle)]
         assert payload["reference"]["block_style_properties"] == actual
 
-    def test_selector_match_fields_match_dataclass(self, payload: dict) -> None:
-        actual = [f.name for f in dataclasses.fields(SelectorMatch)]
-        assert payload["reference"]["selector_match_fields"] == actual
-
     def test_default_brand_font_matches(self, payload: dict) -> None:
         assert payload["reference"]["default_brand"]["font"] == DEFAULT_THEME.document.font
 
@@ -188,8 +187,8 @@ class TestHelpJsonConsistency:
         assert "variants" in payload["reference"]["default_brand"]
         assert "paragraph" in payload["reference"]["default_brand"]["variants"]
 
-    def test_resolution_order_has_five_steps(self, payload: dict) -> None:
-        assert len(payload["reference"]["resolution_order"]) == 5
+    def test_resolution_order_has_four_steps(self, payload: dict) -> None:
+        assert len(payload["reference"]["resolution_order"]) == 4
 
     def test_nouns_include_document_and_spec(self, payload: dict) -> None:
         assert "document" in payload["nouns"]
@@ -205,9 +204,9 @@ class TestHelpTopicSyntax:
     """Verify help topics reference the new noun-verb CLI syntax."""
 
     def test_overview_uses_noun_verb(self) -> None:
-        assert "mdc document create" in OVERVIEW_TOPIC
+        assert "mdc doc create" in OVERVIEW_TOPIC
         assert "mdc compile" not in OVERVIEW_TOPIC
 
     def test_sidecar_uses_noun_verb(self) -> None:
-        assert "mdc document create" in SIDECAR_TOPIC
-        assert "mdc compile" not in SIDECAR_TOPIC
+        assert "mdc doc" in HELP_TOPIC_SIDECAR
+        assert "mdc compile" not in HELP_TOPIC_SIDECAR

@@ -2,36 +2,79 @@ name: CI
 
 on:
   push:
-    branches: [main]
   pull_request:
+  workflow_dispatch:
+
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+permissions:
+  contents: read
 
 jobs:
   lint:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
-      - uses: astral-sh/setup-uv@v5
-      - run: uv sync
+      - uses: actions/checkout@v6.0.2
+      - uses: astral-sh/setup-uv@v7.6.0
+        with:
+          python-version: "3.11"
+      - run: uv sync --frozen
       - run: uv run ruff check src/ tests/
       - run: uv run ruff format --check src/ tests/
 
   typecheck:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
-      - uses: astral-sh/setup-uv@v5
-      - run: uv sync
+      - uses: actions/checkout@v6.0.2
+      - uses: astral-sh/setup-uv@v7.6.0
+        with:
+          python-version: "3.11"
+      - run: uv sync --frozen
       - run: uv run mypy src/
 
   test:
     runs-on: ubuntu-latest
     strategy:
+      fail-fast: false
       matrix:
         python-version: ["3.11", "3.12", "3.13"]
     steps:
-      - uses: actions/checkout@v4
-      - uses: astral-sh/setup-uv@v5
+      - uses: actions/checkout@v6.0.2
+      - uses: astral-sh/setup-uv@v7.6.0
         with:
           python-version: ${{ matrix.python-version }}
-      - run: uv sync
+      - run: uv sync --frozen
       - run: uv run pytest tests/
+
+  package:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v6.0.2
+      - uses: astral-sh/setup-uv@v7.6.0
+        with:
+          python-version: "3.11"
+      - run: uv sync --frozen
+      - run: uv build
+      - run: uvx twine check dist/*
+      - uses: actions/upload-artifact@v7.0.0
+        with:
+          name: python-distributions
+          path: dist/*
+          if-no-files-found: error
+
+  review-fixtures:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v6.0.2
+      - uses: astral-sh/setup-uv@v7.6.0
+        with:
+          python-version: "3.11"
+      - run: uv sync --frozen
+      - run: uv run python tests/compile_review_fixtures.py
+      - uses: actions/upload-artifact@v7.0.0
+        with:
+          name: review-fixtures
+          path: tests/manual_review_output/*.docx
+          if-no-files-found: error

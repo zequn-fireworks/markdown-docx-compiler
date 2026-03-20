@@ -2,12 +2,6 @@ version = 1
 revision = 3
 requires-python = ">=3.11"
 
-[manifest]
-members = [
-    "markdown-docx-compiler",
-    "mdc-fireworks-templates",
-]
-
 [[package]]
 name = "cfgv"
 version = "3.5.0"
@@ -247,17 +241,8 @@ dependencies = [
     { name = "pyyaml" },
 ]
 
-[package.optional-dependencies]
-fireworks = [
-    { name = "mdc-fireworks-templates" },
-]
-templates = [
-    { name = "mdc-fireworks-templates" },
-]
-
 [package.dev-dependencies]
 dev = [
-    { name = "mdc-fireworks-templates" },
     { name = "mypy" },
     { name = "pre-commit" },
     { name = "pytest" },
@@ -268,16 +253,12 @@ dev = [
 [package.metadata]
 requires-dist = [
     { name = "markdown-it-py", specifier = ">=3.0,<5.0" },
-    { name = "mdc-fireworks-templates", marker = "extra == 'fireworks'", editable = "packages/mdc-fireworks-templates" },
-    { name = "mdc-fireworks-templates", marker = "extra == 'templates'", editable = "packages/mdc-fireworks-templates" },
     { name = "python-docx", specifier = ">=1.1,<2.0" },
     { name = "pyyaml", specifier = ">=6.0,<7.0" },
 ]
-provides-extras = ["fireworks", "templates"]
 
 [package.metadata.requires-dev]
 dev = [
-    { name = "mdc-fireworks-templates", editable = "packages/mdc-fireworks-templates" },
     { name = "mypy", specifier = ">=1.14" },
     { name = "pre-commit", specifier = ">=4.0" },
     { name = "pytest", specifier = ">=8.4.2" },
@@ -296,11 +277,6 @@ sdist = { url = "https://files.pythonhosted.org/packages/5b/f5/4ec618ed16cc4f8fb
 wheels = [
     { url = "https://files.pythonhosted.org/packages/94/54/e7d793b573f298e1c9013b8c4dade17d481164aa517d1d7148619c2cedbf/markdown_it_py-4.0.0-py3-none-any.whl", hash = "sha256:87327c59b172c5011896038353a81343b6754500a08cd7a4973bb48c6d578147", size = 87321, upload-time = "2025-08-11T12:57:51.923Z" },
 ]
-
-[[package]]
-name = "mdc-fireworks-templates"
-version = "0.1.0"
-source = { editable = "packages/mdc-fireworks-templates" }
 
 [[package]]
 name = "mdurl"

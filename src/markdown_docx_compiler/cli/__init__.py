@@ -9,6 +9,7 @@ from __future__ import annotations
 
 import argparse
 import logging
+import sys
 
 import yaml
 
@@ -25,12 +26,12 @@ Compile AI-authored markdown into polished .docx for Google Docs import.
 
 Commands follow <noun> <verb> structure:
 
-  mdc document create report.md -o report.docx
-  mdc doc create report.md --template fireworks
-  mdc document validate report.md
+  mdc doc create report.md -o report.docx
+  mdc doc create report.md --spec report.docx.yaml -o report.docx
+  mdc doc validate report.md
   mdc spec show --for report.md --resolved
   mdc template list
-  mdc theme list
+  mdc theme show default
 
 Abbreviations: document=doc, template=tpl
 
@@ -39,9 +40,46 @@ Use mdc --json (no noun) for a discovery payload listing all nouns and verbs.
 Use mdc <noun> --help for detailed reference documentation.
 """
 
+_MISSING_NOUN_HINTS = {
+    "create": "Try `mdc doc create report.md` or `mdc spec create report.docx.yaml`.",
+    "validate": "Try `mdc doc validate report.md` or `mdc spec validate report.docx.yaml`.",
+    "show": "Try `mdc spec show --for report.md`, `mdc template show default`, or `mdc theme show default`.",
+    "list": "Try `mdc template list` or `mdc theme list`.",
+}
+
+
+def _first_non_option(argv: list[str]) -> str | None:
+    for token in argv:
+        if token == "--":
+            return None
+        if not token.startswith("-"):
+            return token
+    return None
+
+
+def _handle_common_top_level_mistakes(argv: list[str]) -> None:
+    if "-h" in argv or "--help" in argv:
+        return
+
+    first_token = _first_non_option(argv)
+    if first_token not in _MISSING_NOUN_HINTS:
+        return
+
+    emit_error(
+        command=first_token,
+        code="MISSING_NOUN",
+        message=f"Missing noun before verb: {first_token}",
+        hint=f"Commands use `mdc <noun> <verb>`. {_MISSING_NOUN_HINTS[first_token]}",
+        exit_code=2,
+    )
+
 
 def main() -> None:
     """Parse CLI arguments and dispatch to noun-verb handlers."""
+    raw_argv = sys.argv[1:]
+    set_json_mode("--json" in raw_argv)
+    _handle_common_top_level_mistakes(raw_argv)
+
     parser = argparse.ArgumentParser(
         prog="mdc",
         description=_TOP_LEVEL_DESCRIPTION,

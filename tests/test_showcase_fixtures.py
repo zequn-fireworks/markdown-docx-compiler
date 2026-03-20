@@ -7,7 +7,7 @@ from pathlib import Path
 from zipfile import ZipFile
 
 from markdown_docx_compiler import compile_markdown_file
-from markdown_docx_compiler.ir import HeadingBlock, ImageBlock, ListBlock, TableBlock
+from markdown_docx_compiler.models.document import Heading, Image, List, Table
 from markdown_docx_compiler.parser import extract_front_matter, parse_markdown
 
 FIXTURES = Path(__file__).parent / "fixtures"
@@ -18,11 +18,11 @@ def test_showcase_en_parses_expected_blocks() -> None:
     meta, body = extract_front_matter(md_path.read_text(encoding="utf-8"))
     document = parse_markdown(body, metadata=meta, md_dir=str(md_path.parent))
 
-    assert meta["title"] == "Manual Review Showcase — English"
-    headings = [block for block in document.blocks if isinstance(block, HeadingBlock)]
-    tables = [block for block in document.blocks if isinstance(block, TableBlock)]
-    images = [block for block in document.blocks if isinstance(block, ImageBlock)]
-    lists = [block for block in document.blocks if isinstance(block, ListBlock)]
+    assert meta["title"] == "Manual Review Showcase \u2014 English"
+    headings = [block for block in document.body if isinstance(block, Heading)]
+    tables = [block for block in document.body if isinstance(block, Table)]
+    images = [block for block in document.body if isinstance(block, Image)]
+    lists = [block for block in document.body if isinstance(block, List)]
 
     assert len(headings) >= 4
     assert len(tables) == 2
@@ -37,8 +37,8 @@ def test_showcase_zh_parses_expected_blocks() -> None:
     meta, body = extract_front_matter(md_path.read_text(encoding="utf-8"))
     document = parse_markdown(body, metadata=meta, md_dir=str(md_path.parent))
 
-    assert "人工复核示例文档" in meta["title"]
-    tables = [block for block in document.blocks if isinstance(block, TableBlock)]
+    assert "\u4eba\u5de5\u590d\u6838\u793a\u4f8b\u6587\u6863" in meta["title"]
+    tables = [block for block in document.body if isinstance(block, Table)]
     assert len(tables) == 1
     assert tables[0].meta.anchor == "zh-results-table"
 
@@ -77,6 +77,6 @@ def test_showcase_zh_compiles_with_expected_footer_and_font_slots(tmp_path: Path
         document_xml = archive.read("word/document.xml").decode("utf-8")
         footer_xml = archive.read("word/footer1.xml").decode("utf-8")
 
-    assert "中文示例" in footer_xml
-    assert "人工复核" in footer_xml
-    assert 'w:eastAsia="Helvetica Neue"' in document_xml
+    assert "\u4e2d\u6587\u793a\u4f8b" in footer_xml
+    assert "\u4eba\u5de5\u590d\u6838" in footer_xml
+    assert 'w:eastAsia="Aptos"' in document_xml

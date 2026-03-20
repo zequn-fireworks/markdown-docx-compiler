@@ -1,5 +1,5 @@
 """DOCX backend exports."""
 
-from .renderer import DocxRenderer
+from .doc_renderer import DocxRenderer
 
 __all__ = ["DocxRenderer"]

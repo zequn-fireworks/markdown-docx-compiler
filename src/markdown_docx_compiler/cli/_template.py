@@ -37,7 +37,7 @@ def register_template_parser(noun_subparsers: argparse._SubParsersAction) -> Non
         help="Show template details",
         description="Show details for a specific installed template.",
     )
-    show_p.add_argument("name", help="Template name (e.g. fireworks, fireworks-rca)")
+    show_p.add_argument("name", help="Template name (e.g. acme, acme-report)")
     show_p.set_defaults(handler=_handle_show, verb="show")
 
 
@@ -72,7 +72,8 @@ def _handle_list(args: argparse.Namespace) -> None:
             lines.append(f"  {e['name']:30s} brand={e['brand']}, font={e['font']}{tag}")
         if len(entries) == 1:
             lines.append("")
-            lines.append("  Install more: uv add markdown-docx-compiler[templates]")
+            lines.append("  Install more via a package exposing `mdc.templates`, for example:")
+            lines.append("  pip install mdc-acme-templates")
         print("\n".join(lines))
 
 

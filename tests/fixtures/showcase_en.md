@@ -1,8 +1,15 @@
 ---
 title: "Manual Review Showcase — English"
-template: fireworks
-footer_center: "Manual Review"
 ---
+
+<!-- docx:page_footer.left -->
+Confidential
+
+<!-- docx:page_footer.center -->
+Manual Review
+
+<!-- docx:page_footer.right -->
+English Showcase
 
 # Manual Review Showcase
 

@@ -13,14 +13,13 @@ from markdown_docx_compiler.cli._output import emit_error, emit_success, is_json
 
 
 def register_spec_parser(noun_subparsers: argparse._SubParsersAction) -> None:  # type: ignore[type-arg]
-    from markdown_docx_compiler.selectors import HELP_TOPIC as _SELECTORS
-    from markdown_docx_compiler.sidecar import HELP_TOPIC as _SIDECAR
+    from markdown_docx_compiler.help_text import HELP_TOPIC_SIDECAR
 
     noun_parser = noun_subparsers.add_parser(
         "spec",
         help="Manage sidecar configuration files",
         description="Manage sidecar configuration files.",
-        epilog=_SIDECAR + "\n" + _SELECTORS,
+        epilog=HELP_TOPIC_SIDECAR,
         formatter_class=argparse.RawDescriptionHelpFormatter,
     )
     noun_parser.set_defaults(noun_parser=noun_parser)
@@ -87,7 +86,7 @@ def _resolve_spec_path(args: argparse.Namespace) -> Path:
             hint="Provide either a sidecar path or --for <markdown-file>, not both.",
         )
     if args.for_doc:
-        from markdown_docx_compiler.compiler import discover_sidecar_path
+        from markdown_docx_compiler.compile import discover_sidecar_path
 
         md_path = Path(args.for_doc).resolve()
         if not md_path.exists():
@@ -123,7 +122,7 @@ def _handle_show(args: argparse.Namespace) -> None:
         _show_resolved(spec_path, args)
         return
 
-    from markdown_docx_compiler.sidecar import load_sidecar
+    from markdown_docx_compiler.models.loader import load_sidecar
 
     sidecar = load_sidecar(spec_path)
     data: dict[str, Any] = {
@@ -138,11 +137,11 @@ def _handle_show(args: argparse.Namespace) -> None:
 
 
 def _show_resolved(spec_path: Path, args: argparse.Namespace) -> None:
-    from markdown_docx_compiler.parser import extract_front_matter
-    from markdown_docx_compiler.selectors import resolve_document_config
-    from markdown_docx_compiler.sidecar import load_sidecar
+    from markdown_docx_compiler.models.loader import load_sidecar
+    from markdown_docx_compiler.parser.front_matter import extract_front_matter
+    from markdown_docx_compiler.resolve.cascade import resolve_document_config
 
-    sidecar = load_sidecar(spec_path)
+    sidecar = load_sidecar(spec_path, base_dir=spec_path.parent)
     md_path = Path(args.for_doc).resolve() if args.for_doc else None
     front_matter: dict[str, Any] = {}
     base_dir = spec_path.parent
@@ -152,38 +151,35 @@ def _show_resolved(spec_path: Path, args: argparse.Namespace) -> None:
         front_matter, _ = extract_front_matter(raw)
         base_dir = md_path.parent
 
-    theme, doc_config, resolved_sidecar = resolve_document_config(
-        front_matter=front_matter,
+    doc_config, resolved_sidecar = resolve_document_config(
         sidecar=sidecar,
-        template_override=getattr(args, "template", None),
+        front_matter=front_matter,
         base_dir=base_dir,
     )
     data: dict[str, Any] = {
         "spec_path": str(spec_path),
-        "theme": theme.name,
         "document_config": asdict(doc_config),
         "resolved_sidecar": asdict(resolved_sidecar),
     }
     if is_json_mode():
         emit_success(command="spec show", data=data)
     else:
-        print(f"# Resolved config (spec={spec_path.name}, theme={theme.name})")
+        print(f"# Resolved config (spec={spec_path.name})")
         print(yaml.dump(data, default_flow_style=False, sort_keys=False))
 
 
 def _handle_validate(args: argparse.Namespace) -> None:
     spec_path = _resolve_spec_path(args)
 
-    from markdown_docx_compiler.sidecar import load_sidecar
+    from markdown_docx_compiler.models.loader import load_sidecar
 
-    sidecar = load_sidecar(spec_path)
-    block_count = len(sidecar.defaults) + len(sidecar.selectors) + len(sidecar.blocks)
+    sidecar = load_sidecar(spec_path, base_dir=spec_path.parent)
+    block_count = len(sidecar.defaults) + len(sidecar.blocks)
     data: dict[str, Any] = {
         "spec_path": str(spec_path),
         "valid": True,
-        "template": sidecar.template,
+        "extend": sidecar.extend,
         "defaults_count": len(sidecar.defaults),
-        "selectors_count": len(sidecar.selectors),
         "blocks_count": len(sidecar.blocks),
     }
     emit_success(
@@ -197,32 +193,27 @@ _SCAFFOLD = """\
 # Sidecar config for document styling.
 # Run `mdc spec --help` for full reference.
 
-# template: fireworks-rca    # Start from an installed template
+# extend: acme-report        # Inherit from an installed template
 
 document:
-  footer:
-    left: ""
-    center: ""
-    right: ""
-    show_page_numbers: true
-  # margin:
-  #   top_inches: 1.0
-  #   bottom_inches: 0.8
+  font: { family: Arial, size: 11, color: "333333" }
+  # link: { color: "2563EB" }
+  # page:
+  #   margin: { top: 1.0, bottom: 0.8, left: 1.0, right: 1.0 }
+
+# page_footer:
+#   font: { size: 8, color: "666666" }
 
 defaults:
   paragraph:
-    variant: body
+    spacing: { after: 6, line: 1.15 }
   table:
-    variant: standard
-    width: full
-
-# selectors:
-#   - match: { type: table, column_count: 5 }
-#     apply: { variant: benchmark }
+    table: { header_row: true }
 
 # blocks:
 #   my-anchor-id:
-#     columns: [3fr, 1fr, 1fr]
+#     type: table
+#     table: { columns: [3fr, 1fr, 1fr] }
 """
 
 
