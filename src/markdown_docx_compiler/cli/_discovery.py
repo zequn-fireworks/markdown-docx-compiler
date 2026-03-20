@@ -11,21 +11,9 @@ from markdown_docx_compiler import __version__
 def build_discovery_payload() -> dict[str, Any]:
     """Build the machine-readable discovery payload returned by ``mdc --json``."""
     from markdown_docx_compiler.models.style import BlockStyle
-    from markdown_docx_compiler.styles.themes import DEFAULT_THEME
+    from markdown_docx_compiler.resolve.defaults import DEFAULT_DOCUMENT
 
-    doc = DEFAULT_THEME.document
-    default_brand: dict[str, Any] = {
-        "font": doc.font,
-        "mono_font": doc.mono_font,
-        "primary_color": doc.primary_color,
-        "text_color": doc.text_color,
-        "muted_color": doc.muted_color,
-        "border_color": doc.border_color,
-    }
-    if DEFAULT_THEME.variants:
-        default_brand["variants"] = {
-            block_type: list(variants.keys()) for block_type, variants in DEFAULT_THEME.variants.items()
-        }
+    document_defaults = dataclasses.asdict(DEFAULT_DOCUMENT)
 
     return {
         "version": __version__,
@@ -74,38 +62,11 @@ def build_discovery_payload() -> dict[str, Any]:
                     },
                 },
             },
-            "template": {
-                "aliases": ["tpl"],
-                "description": "Browse installable template packages",
-                "verbs": {
-                    "list": {"description": "List installed templates"},
-                    "show": {
-                        "description": "Show template details",
-                        "args": {"name": "Template name"},
-                    },
-                },
-            },
-            "theme": {
-                "aliases": [],
-                "description": "Browse built-in themes and variants",
-                "verbs": {
-                    "list": {"description": "List themes and variants"},
-                    "show": {
-                        "description": "Show theme details",
-                        "args": {"name?": "Theme name (default: default)"},
-                    },
-                },
-            },
         },
         "reference": {
-            "sidecar_autodiscovery": [
-                "<name>.docx.yaml",
-                "<name>.docx.yml",
-                "<name>.docspec.yaml",
-                "<name>.docspec.yml",
-            ],
+            "sidecar_autodiscovery": ["<name>.docx.yaml"],
             "anchor_syntax": "<!-- docx:id=name -->",
-            "default_brand": default_brand,
+            "builtin_document_defaults": document_defaults,
             "block_types": [
                 "paragraph",
                 "table",
@@ -130,10 +91,10 @@ def build_discovery_payload() -> dict[str, Any]:
             },
             "block_style_properties": [f.name for f in dataclasses.fields(BlockStyle)],
             "resolution_order": [
-                "built-in defaults (fonts, colors, margins)",
+                "built-in document + block defaults",
                 "sidecar document globals + type defaults",
                 "sidecar block instance overrides (by anchor)",
-                "front matter overrides",
+                "front matter overrides document config",
             ],
         },
         "hint": "Run `mdc <noun> --help` for detailed reference documentation.",

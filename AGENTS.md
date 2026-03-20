@@ -45,8 +45,8 @@ When changing the repo, preserve these assumptions:
 - `src/markdown_docx_compiler/backend/docx/inlines.py` — inline-level rendering
 - `src/markdown_docx_compiler/backend/docx/regions.py` — region rendering (headers, footers)
 - `src/markdown_docx_compiler/backend/docx/ooxml_helpers.py` — low-level OOXML XML helpers
-- `src/markdown_docx_compiler/styles/` — themes, brand defaults, and template discovery
-- `src/markdown_docx_compiler/cli/` — noun-verb CLI (`mdc doc`, `mdc spec`, `mdc template`, `mdc theme`)
+- `src/markdown_docx_compiler/resolve/defaults.py` — built-in document and block defaults
+- `src/markdown_docx_compiler/cli/` — noun-verb CLI (`mdc doc`, `mdc spec`)
 - `src/markdown_docx_compiler/help_text.py` — help topic aggregator and sidecar reference
 
 - `examples/` — sample documents with sidecar configs and preview images
@@ -58,8 +58,7 @@ When changing the repo, preserve these assumptions:
 
 Each module owns its user-facing help topic text. The CLI aggregates them via
 `help_text.py`. When changing a module's behavior, update its `HELP_TOPIC`
-constant (or `help_topic()` function for dynamic topics like themes) to stay
-in sync.
+constant to stay in sync.
 
 ## Change discipline
 

@@ -45,9 +45,8 @@ def register_spec_parser(noun_subparsers: argparse._SubParsersAction) -> None:  
     show_p.add_argument(
         "--resolved",
         action="store_true",
-        help="Show fully merged config (template + sidecar + front matter)",
+        help="Show fully merged config (built-ins + sidecar + front matter)",
     )
-    show_p.add_argument("--template", help="Template name (used with --resolved)")
     show_p.set_defaults(handler=_handle_show, verb="show")
 
     # --- validate ---
@@ -141,25 +140,22 @@ def _show_resolved(spec_path: Path, args: argparse.Namespace) -> None:
     from markdown_docx_compiler.parser.front_matter import extract_front_matter
     from markdown_docx_compiler.resolve.cascade import resolve_document_config
 
-    sidecar = load_sidecar(spec_path, base_dir=spec_path.parent)
+    sidecar = load_sidecar(spec_path)
     md_path = Path(args.for_doc).resolve() if args.for_doc else None
     front_matter: dict[str, Any] = {}
-    base_dir = spec_path.parent
 
     if md_path and md_path.exists():
         raw = md_path.read_text(encoding="utf-8")
         front_matter, _ = extract_front_matter(raw)
-        base_dir = md_path.parent
 
-    doc_config, resolved_sidecar = resolve_document_config(
+    doc_config = resolve_document_config(
         sidecar=sidecar,
         front_matter=front_matter,
-        base_dir=base_dir,
     )
     data: dict[str, Any] = {
         "spec_path": str(spec_path),
         "document_config": asdict(doc_config),
-        "resolved_sidecar": asdict(resolved_sidecar),
+        "resolved_sidecar": asdict(sidecar),
     }
     if is_json_mode():
         emit_success(command="spec show", data=data)
@@ -173,12 +169,12 @@ def _handle_validate(args: argparse.Namespace) -> None:
 
     from markdown_docx_compiler.models.loader import load_sidecar
 
-    sidecar = load_sidecar(spec_path, base_dir=spec_path.parent)
+    sidecar = load_sidecar(spec_path)
     block_count = len(sidecar.defaults) + len(sidecar.blocks)
     data: dict[str, Any] = {
         "spec_path": str(spec_path),
         "valid": True,
-        "extend": sidecar.extend,
+        "inherits": sidecar.inherits,
         "defaults_count": len(sidecar.defaults),
         "blocks_count": len(sidecar.blocks),
     }
@@ -193,7 +189,7 @@ _SCAFFOLD = """\
 # Sidecar config for document styling.
 # Run `mdc spec --help` for full reference.
 
-# extend: acme-report        # Inherit from an installed template
+# inherits: ../base.docx.yaml  # Inherit from another sidecar file
 
 document:
   font: { family: Arial, size: 11, color: "333333" }

@@ -12,7 +12,6 @@ globals but do not participate in the body cascade).
 
 from __future__ import annotations
 
-from pathlib import Path
 from typing import Any
 
 from markdown_docx_compiler._util import as_float, as_str
@@ -51,9 +50,8 @@ def resolve_document_config(
     *,
     sidecar: SidecarConfig,
     front_matter: dict[str, Any] | None = None,
-    base_dir: Path | None = None,
-) -> tuple[DocumentConfig, SidecarConfig]:
-    """Produce the final ``DocumentConfig`` and effective ``SidecarConfig``.
+) -> DocumentConfig:
+    """Produce the final ``DocumentConfig``.
 
     Cascade: built-in defaults -> sidecar document -> front matter.
     """
@@ -63,10 +61,7 @@ def resolve_document_config(
         fm_config = _document_from_front_matter(front_matter)
         config = merge_document_config(config, fm_config)
 
-    if config.title and base_dir:
-        pass  # reserved for future path resolution
-
-    return config, sidecar
+    return config
 
 
 def resolve_region_styles(

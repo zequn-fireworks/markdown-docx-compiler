@@ -10,8 +10,8 @@ import yaml
 HELP_TOPIC = """\
 # Front Matter
 
-Use YAML front matter for document-level metadata.  Front matter overrides
-built-in defaults but is itself overridden by sidecar config.
+Use YAML front matter for document-level metadata. Front matter overrides
+built-in defaults and sidecar document settings for the supported keys below.
 
 ## Example
 
@@ -48,8 +48,8 @@ def extract_front_matter(text: str) -> tuple[dict[str, Any], str]:
         return {}, text
     try:
         meta = yaml.safe_load(match.group(1)) or {}
-    except yaml.YAMLError:
-        meta = {}
+    except yaml.YAMLError as exc:
+        raise ValueError("Invalid front matter YAML.") from exc
     if not isinstance(meta, dict):
-        meta = {}
+        raise ValueError("Front matter must be a mapping.")
     return meta, text[match.end() :]

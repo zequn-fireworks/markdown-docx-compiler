@@ -32,6 +32,18 @@ from markdown_docx_compiler.models.style import (
     TableProps,
 )
 
+_TOP_LEVEL_KEYS = frozenset(
+    {
+        "inherits",
+        "document",
+        "page_header",
+        "page_footer",
+        "doc_header",
+        "defaults",
+        "blocks",
+    }
+)
+
 # ---------------------------------------------------------------------------
 # Leaf property-group parsers
 # ---------------------------------------------------------------------------
@@ -207,6 +219,12 @@ def _region_style_from_dict(data: dict[str, Any] | None) -> RegionStyle:
 
 def _parse_sidecar_payload(payload: dict[str, Any]) -> SidecarConfig:
     """Convert a raw YAML dict into a ``SidecarConfig``."""
+    unknown_keys = sorted(set(payload) - _TOP_LEVEL_KEYS)
+    if unknown_keys:
+        keys = ", ".join(unknown_keys)
+        allowed = ", ".join(sorted(_TOP_LEVEL_KEYS))
+        raise ValueError(f"Unknown sidecar top-level key(s): {keys}. Allowed keys: {allowed}.")
+
     defaults: dict[str, BlockStyle] = {}
     for key, value in as_dict(payload.get("defaults")).items():
         defaults[key] = _block_style_from_dict(as_dict(value))
@@ -216,7 +234,7 @@ def _parse_sidecar_payload(payload: dict[str, Any]) -> SidecarConfig:
         blocks[key] = _block_override_from_dict(as_dict(value))
 
     return SidecarConfig(
-        extend=as_str(payload.get("extend")),
+        inherits=as_str(payload.get("inherits")),
         document=_document_config_from_dict(as_dict(payload.get("document")) or None),
         page_header=_region_style_from_dict(as_dict(payload.get("page_header")) or None),
         page_footer=_region_style_from_dict(as_dict(payload.get("page_footer")) or None),
@@ -233,30 +251,29 @@ def _read_yaml(path: Path) -> dict[str, Any]:
     return payload
 
 
-def load_sidecar(path: Path | None, *, base_dir: Path | None = None) -> SidecarConfig:
-    """Load and return a ``SidecarConfig``, resolving ``extend`` if present.
+def load_sidecar(path: Path | None) -> SidecarConfig:
+    """Load and return a ``SidecarConfig``, resolving ``inherits`` if present.
 
     Parameters
     ----------
     path:
         Path to the sidecar YAML file, or ``None`` for defaults.
-    base_dir:
-        Directory used to resolve relative ``extend`` paths.  Defaults to
-        the parent of *path*.
     """
-    if path is None or not path.exists():
+    if path is None:
         return SidecarConfig()
+    if not path.exists():
+        raise FileNotFoundError(f"Sidecar file not found: {path}")
 
     payload = _read_yaml(path)
     config = _parse_sidecar_payload(payload)
 
-    if config.extend:
-        resolve_dir = base_dir or path.parent
-        base_path = (resolve_dir / config.extend).resolve()
-        if base_path.exists():
-            base_config = load_sidecar(base_path, base_dir=base_path.parent)
-            from markdown_docx_compiler.resolve.merge import merge_sidecar_config
+    if config.inherits:
+        base_path = (path.parent / config.inherits).resolve()
+        if not base_path.exists():
+            raise FileNotFoundError(f"Inherited sidecar not found: {base_path}")
+        base_config = load_sidecar(base_path)
+        from markdown_docx_compiler.resolve.merge import merge_sidecar_config
 
-            config = merge_sidecar_config(base_config, config)
+        config = merge_sidecar_config(base_config, config)
 
     return config

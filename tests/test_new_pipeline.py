@@ -171,17 +171,17 @@ class TestParser:
 class TestCascade:
     def test_document_config_resolution(self) -> None:
         sidecar = load_sidecar(FIXTURE_DIR / "sample_report.docx.yaml")
-        config, _ = resolve_document_config(sidecar=sidecar)
+        config = resolve_document_config(sidecar=sidecar)
         assert config.font.family == "Aptos"
         assert config.font.size == 10.5
 
     def test_block_style_with_anchor(self) -> None:
         sidecar = load_sidecar(FIXTURE_DIR / "sample_report.docx.yaml")
-        config, resolved = resolve_document_config(sidecar=sidecar)
+        config = resolve_document_config(sidecar=sidecar)
         md = "<!-- docx:id=results-table -->\n| A | B | C |\n| - | - | - |\n| 1 | 2 | 3 |\n"
         doc = parse_markdown(md, metadata={})
         table = doc.body[0]
-        style = resolve_block_style(block=table, sidecar=resolved, document=config)
+        style = resolve_block_style(block=table, sidecar=sidecar, document=config)
         assert style.table is not None
         assert style.table.columns == ["3fr", "1fr", "1fr"]
 

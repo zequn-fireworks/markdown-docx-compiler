@@ -18,10 +18,9 @@ def test_sidecar_resolves_document_and_block_styles() -> None:
 
     metadata, body = extract_front_matter(markdown_path.read_text(encoding="utf-8"))
     sidecar = load_sidecar(sidecar_path)
-    document_config, resolved_sidecar = resolve_document_config(
+    document_config = resolve_document_config(
         sidecar=sidecar,
         front_matter=metadata,
-        base_dir=fixture_dir,
     )
     document = parse_markdown(body, metadata=metadata, md_dir=str(fixture_dir))
 
@@ -37,7 +36,7 @@ def test_sidecar_resolves_document_and_block_styles() -> None:
     results_table = document.body[3]
     table_style = resolve_block_style(
         block=results_table,
-        sidecar=resolved_sidecar,
+        sidecar=sidecar,
         document=document_config,
     )
     assert table_style.table is not None

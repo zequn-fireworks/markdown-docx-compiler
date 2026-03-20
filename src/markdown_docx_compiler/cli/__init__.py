@@ -18,8 +18,6 @@ from markdown_docx_compiler.cli._discovery import build_discovery_payload
 from markdown_docx_compiler.cli._document import register_document_parser
 from markdown_docx_compiler.cli._output import emit_error, emit_success, set_json_mode
 from markdown_docx_compiler.cli._spec import register_spec_parser
-from markdown_docx_compiler.cli._template import register_template_parser
-from markdown_docx_compiler.cli._theme import register_theme_parser
 
 _TOP_LEVEL_DESCRIPTION = """\
 Compile AI-authored markdown into polished .docx for Google Docs import.
@@ -30,10 +28,9 @@ Commands follow <noun> <verb> structure:
   mdc doc create report.md --spec report.docx.yaml -o report.docx
   mdc doc validate report.md
   mdc spec show --for report.md --resolved
-  mdc template list
-  mdc theme show default
+  mdc spec create report.docx.yaml
 
-Abbreviations: document=doc, template=tpl
+Abbreviations: document=doc
 
 Use --json with any command for machine-readable output.
 Use mdc --json (no noun) for a discovery payload listing all nouns and verbs.
@@ -43,8 +40,8 @@ Use mdc <noun> --help for detailed reference documentation.
 _MISSING_NOUN_HINTS = {
     "create": "Try `mdc doc create report.md` or `mdc spec create report.docx.yaml`.",
     "validate": "Try `mdc doc validate report.md` or `mdc spec validate report.docx.yaml`.",
-    "show": "Try `mdc spec show --for report.md`, `mdc template show default`, or `mdc theme show default`.",
-    "list": "Try `mdc template list` or `mdc theme list`.",
+    "show": "Try `mdc spec show --for report.md`.",
+    "list": "There is no top-level `list`. Use `mdc --json` for discovery output.",
 }
 
 
@@ -93,8 +90,6 @@ def main() -> None:
 
     register_document_parser(noun_subparsers)
     register_spec_parser(noun_subparsers)
-    register_template_parser(noun_subparsers)
-    register_theme_parser(noun_subparsers)
 
     args = parser.parse_args()
 

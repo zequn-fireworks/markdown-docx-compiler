@@ -58,23 +58,22 @@ def compile_markdown_file(
     raw_text = input_path.read_text(encoding="utf-8")
     front_matter, body = extract_front_matter(raw_text)
 
-    sidecar = load_sidecar(spec, base_dir=input_path.parent)
+    sidecar = load_sidecar(spec)
 
-    document_config, resolved_sidecar = resolve_document_config(
+    document_config = resolve_document_config(
         sidecar=sidecar,
         front_matter=front_matter,
-        base_dir=input_path.parent,
     )
 
     ir_document = parse_markdown(body, metadata=front_matter, md_dir=str(input_path.parent))
 
     block_styles = resolve_all_block_styles(
         blocks=ir_document.body,
-        sidecar=resolved_sidecar,
+        sidecar=sidecar,
         document=document_config,
     )
 
-    page_header_style, page_footer_style, doc_header_style = resolve_region_styles(resolved_sidecar)
+    page_header_style, page_footer_style, doc_header_style = resolve_region_styles(sidecar)
 
     if not dry_run:
         renderer = DocxRenderer(
@@ -98,20 +97,13 @@ def compile_markdown_file(
 
 def discover_sidecar_path(input_path: Path) -> Path | None:
     """Discover sidecar next to the markdown file."""
-    candidates = [
-        input_path.with_suffix(".docx.yaml"),
-        input_path.with_suffix(".docx.yml"),
-        input_path.with_suffix(".docspec.yaml"),
-        input_path.with_suffix(".docspec.yml"),
-    ]
-    for candidate in candidates:
-        if candidate.exists():
-            return candidate
+    candidate = input_path.with_suffix(".docx.yaml")
+    if candidate.exists():
+        return candidate
     return None
 
 
 def _resolve_spec_path(*, input_path: Path, spec_path: str | Path | None) -> Path | None:
     if spec_path is None:
         return discover_sidecar_path(input_path)
-    path = Path(spec_path)
-    return path.resolve() if path.exists() or path.is_absolute() else (input_path.parent / path).resolve()
+    return Path(spec_path).resolve()

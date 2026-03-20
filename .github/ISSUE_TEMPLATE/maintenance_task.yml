@@ -1,0 +1,42 @@
+name: Maintenance task
+description: Track refactors, tooling, docs, or release-prep work.
+title: "[Task]: "
+labels:
+  - chore
+body:
+  - type: textarea
+    id: objective
+    attributes:
+      label: Objective
+      description: What should be improved or cleaned up?
+      placeholder: Simplify...
+    validations:
+      required: true
+  - type: dropdown
+    id: area
+    attributes:
+      label: Area
+      options:
+        - Repository structure
+        - Test suite
+        - CI / release workflow
+        - Documentation / help text
+        - Compiler architecture
+        - Dependency / packaging
+        - Other
+    validations:
+      required: true
+  - type: textarea
+    id: success
+    attributes:
+      label: Definition of done
+      description: Describe the expected end state.
+      placeholder: This is done when...
+    validations:
+      required: true
+  - type: textarea
+    id: validation
+    attributes:
+      label: Validation plan
+      description: Note the checks, fixtures, or manual review expected for this task.
+      placeholder: Run ruff, mypy, pytest, and...
