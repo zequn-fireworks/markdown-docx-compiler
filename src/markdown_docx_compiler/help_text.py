@@ -11,10 +11,12 @@ from __future__ import annotations
 from typing import Any
 
 from markdown_docx_compiler import HELP_TOPIC as _OVERVIEW
-from markdown_docx_compiler.cli._document import HELP_TOPIC_MARKDOWN as _MARKDOWN
 from markdown_docx_compiler.parser.front_matter import HELP_TOPIC as _FRONTMATTER
 from markdown_docx_compiler.parser.markdown import (
     HELP_TOPIC_ANCHORS as _ANCHORS,
+)
+from markdown_docx_compiler.parser.markdown import (
+    HELP_TOPIC_MARKDOWN as _MARKDOWN,
 )
 
 HELP_TOPIC_SIDECAR = """\
@@ -56,7 +58,7 @@ Place it next to your markdown file as ``<name>.docx.yaml``.
       type: table
       table: { columns: [3fr, 1fr, 1fr] }
 
-Anchors in ``blocks:`` target top-level body blocks only.
+Anchors in ``blocks:`` target body blocks, including blocks inside list items.
 
 ## Resolution order
 

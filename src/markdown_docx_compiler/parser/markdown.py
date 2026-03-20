@@ -68,6 +68,27 @@ HELP_TOPIC_MARKDOWN = """\
 - [links](url)
 - hard and soft line breaks
 
+## Region tags
+
+Place content into page headers, footers, or a doc header:
+
+  <!-- docx:page_header.left -->
+  <!-- docx:page_footer.right -->
+  <!-- docx:doc_header.left -->
+
+The next top-level paragraph, heading, or standalone image is extracted into
+the region slot. Other block types are rejected.
+
+## Anchor tags
+
+Tag a block for instance-level styling:
+
+  <!-- docx:id=results-table -->
+
+Reference the anchor in the sidecar `blocks:` section.
+Anchors apply to the next body block, including blocks inside list items.
+Region tags remain top-level-only.
+
 ## Not supported
 
 These features are not handled by the compiler:
@@ -78,7 +99,7 @@ These features are not handled by the compiler:
 - math / LaTeX
 - custom inline directives
 - definition lists
-- nested blockquotes
+- nested block structures inside blockquotes
 
 The only recognized HTML is `docx:` tags written with HTML comment syntax
 (see `mdc doc --help`):
@@ -100,10 +121,11 @@ from the sidecar config.
 ## Rules
 
 - The tag must be on its own line.
-- It applies to the next top-level body block.
+- It applies to the next body block.
 - The tag itself is not rendered in the output.
 - Only `docx:` tags are treated as compiler metadata.
-- Anchors inside lists or other nested structures are rejected.
+- Anchor tags can target blocks inside list items.
+- Region tags remain top-level-only.
 
 ## Example
 
@@ -248,8 +270,9 @@ class _IRWalker:
             if token.type in {"bullet_list_open", "ordered_list_open"}:
                 ordered = token.type == "ordered_list_open"
                 close_type = "ordered_list_close" if ordered else "bullet_list_close"
+                list_anchor = self._take_pending_anchor()
                 list_block, end_index = self._collect_list(tokens=tokens, start=index + 1, close_type=close_type)
-                list_block = replace(list_block, meta=self._next_meta())
+                list_block = replace(list_block, meta=self._meta_from_anchor(list_anchor))
                 results.append((region_tag, list_block))
                 index = end_index + 1
                 continue
@@ -327,13 +350,15 @@ class _IRWalker:
         self._pending_region = None
         return True
 
-    def _reject_nested_docx_tag(self, token: Token, *, container: str) -> None:
+    def _reject_nested_docx_tag(self, token: Token, *, container: str, allow_anchor: bool = False) -> None:
         parsed = self._parse_docx_tag(token)
         if parsed is None:
             return
         kind, _payload = parsed
         if kind == "anchor":
-            raise ValueError(f"Anchor tags are only supported on top-level body blocks, not inside {container}.")
+            if allow_anchor:
+                return
+            raise ValueError(f"Anchor tags are not supported inside {container}.")
         raise ValueError(
             "Region tags are only supported on top-level paragraphs, headings, and standalone images, "
             f"not inside {container}."
@@ -345,13 +370,16 @@ class _IRWalker:
         self._block_index += 1
         return self._block_index
 
-    def _next_meta(self) -> BlockMeta:
+    def _take_pending_anchor(self) -> str | None:
         anchor = self._pending_anchor
         self._pending_anchor = None
+        return anchor
+
+    def _meta_from_anchor(self, anchor: str | None) -> BlockMeta:
         return BlockMeta(anchor=anchor, index=self._next_index())
 
-    def _next_unanchored_meta(self) -> BlockMeta:
-        return BlockMeta(index=self._next_index())
+    def _next_meta(self) -> BlockMeta:
+        return self._meta_from_anchor(self._take_pending_anchor())
 
     def _resolve_path(self, path: str) -> str:
         p = Path(path)
@@ -375,34 +403,66 @@ class _IRWalker:
                 continue
 
             item_blocks: list[BlockNode] = []
-            item_meta = self._next_unanchored_meta()
             index += 1
             while index < len(tokens) and tokens[index].type != "list_item_close":
                 token = tokens[index]
-                self._reject_nested_docx_tag(token, container="list items")
+                self._reject_nested_docx_tag(token, container="list items", allow_anchor=True)
                 if self._capture_docx_tag(token):
                     index += 1
                     continue
+                if token.type == "heading_open":
+                    level = int(token.tag[1])
+                    inline = tokens[index + 1]
+                    item_blocks.append(Heading(level=level, content=_inline_from_token(inline), meta=self._next_meta()))
+                    index += 3
+                    continue
                 if token.type == "paragraph_open":
                     inline = tokens[index + 1]
-                    item_blocks.append(Paragraph(content=_inline_from_token(inline), meta=item_meta))
+                    image = _image_from_inline(inline)
+                    if image is not None:
+                        path, alt, title = image
+                        item_blocks.append(
+                            Image(
+                                path=self._resolve_path(path),
+                                alt_text=alt,
+                                title=title,
+                                meta=self._next_meta(),
+                            )
+                        )
+                    else:
+                        item_blocks.append(Paragraph(content=_inline_from_token(inline), meta=self._next_meta()))
                     index += 3
                     continue
                 if token.type in {"bullet_list_open", "ordered_list_open"}:
                     nested_ordered = token.type == "ordered_list_open"
                     nested_close = "ordered_list_close" if nested_ordered else "bullet_list_close"
+                    nested_anchor = self._take_pending_anchor()
                     nested_list, index = self._collect_list(tokens=tokens, start=index + 1, close_type=nested_close)
-                    item_blocks.append(replace(nested_list, meta=item_meta))
+                    item_blocks.append(replace(nested_list, meta=self._meta_from_anchor(nested_anchor)))
                     index += 1
+                    continue
+                if token.type == "table_open":
+                    table_block, end_index = self._collect_table(tokens=tokens, start=index + 1)
+                    item_blocks.append(replace(table_block, meta=self._next_meta()))
+                    index = end_index + 1
                     continue
                 if token.type == "fence":
                     item_blocks.append(
                         CodeBlock(
                             value=token.content.rstrip("\n"),
                             language=token.info.strip() or None,
-                            meta=item_meta,
+                            meta=self._next_meta(),
                         )
                     )
+                    index += 1
+                    continue
+                if token.type == "blockquote_open":
+                    quote, end_index = self._collect_blockquote(tokens=tokens, start=index + 1)
+                    item_blocks.append(Blockquote(content=quote, meta=self._next_meta()))
+                    index = end_index + 1
+                    continue
+                if token.type == "hr":
+                    item_blocks.append(HorizontalRule(meta=self._next_meta()))
                     index += 1
                     continue
                 index += 1
@@ -455,6 +515,20 @@ class _IRWalker:
             if token.type == "blockquote_close":
                 return parts, index
             self._reject_nested_docx_tag(token, container="blockquotes")
+            if token.type == "paragraph_close":
+                next_token = tokens[index + 1] if index + 1 < len(tokens) else None
+                if next_token is not None and next_token.type != "blockquote_close":
+                    parts.append(LineBreak(hard=True))
+                index += 1
+                continue
+            if token.type in {"paragraph_open"}:
+                index += 1
+                continue
+            if token.type not in {"inline"}:
+                raise ValueError(
+                    "Blockquotes currently support paragraph content only; nested lists, tables, code blocks, "
+                    "and other block structures inside blockquotes are not supported."
+                )
             if token.type == "inline":
                 parts.extend(_inline_from_token(token))
             index += 1

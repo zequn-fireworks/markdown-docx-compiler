@@ -78,9 +78,9 @@ class TestGetHelpText:
         assert "logo_path" not in text
         assert "footer_center" not in text
 
-    def test_anchor_topic_mentions_top_level_scope(self) -> None:
+    def test_anchor_topic_mentions_list_item_support(self) -> None:
         text = get_help_text("anchors")
-        assert "top-level body block" in text
+        assert "blocks inside list items" in text
 
 
 class TestBuildHelpJson:

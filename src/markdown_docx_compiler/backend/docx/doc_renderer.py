@@ -78,6 +78,7 @@ class DocxRenderer:
                 doc=self.document,
                 block=block,
                 style=style,
+                block_styles=block_styles,
                 config=self.config,
                 content_width_inches=cw_inches,
                 content_width_twips=cw_twips,

@@ -49,6 +49,7 @@ def render_block(
     doc: Any,
     block: BlockNode,
     style: BlockStyle,
+    block_styles: dict[int, BlockStyle],
     config: DocumentConfig,
     content_width_inches: float,
     content_width_twips: int,
@@ -62,7 +63,16 @@ def render_block(
     elif isinstance(block, Paragraph):
         _render_paragraph(doc, block, style, config)
     elif isinstance(block, List):
-        _render_list(doc, block, style, config, level=0)
+        _render_list(
+            doc,
+            block,
+            style,
+            block_styles,
+            config,
+            level=0,
+            content_width_inches=content_width_inches,
+            content_width_twips=content_width_twips,
+        )
     elif isinstance(block, Table):
         _render_table(doc, block, style, config, content_width_twips)
     elif isinstance(block, CodeBlock):
@@ -145,28 +155,65 @@ def _render_paragraph(doc: Any, block: Paragraph, style: BlockStyle, config: Doc
     )
 
 
-def _render_list(doc: Any, block: List, style: BlockStyle, config: DocumentConfig, *, level: int) -> None:
+def _render_list(
+    doc: Any,
+    block: List,
+    style: BlockStyle,
+    block_styles: dict[int, BlockStyle],
+    config: DocumentConfig,
+    *,
+    level: int,
+    content_width_inches: float,
+    content_width_twips: int,
+) -> None:
     sp = style.spacing or SpacingStyle()
-    font = _font_or(style, config)
 
     for item in block.items:
         for inner in item.blocks:
+            inner_style = block_styles.get(inner.meta.index, style)
             if isinstance(inner, Paragraph):
                 para = doc.add_paragraph(style="List Number" if block.ordered else "List Bullet")
-                para.paragraph_format.left_indent = Inches(0.35 * (level + 1))
-                para.paragraph_format.space_before = Pt(sp.before or 2.0)
-                para.paragraph_format.space_after = Pt(sp.after or 2.0)
+                inner_sp = inner_style.spacing or SpacingStyle()
+                para.paragraph_format.left_indent = Inches(0.35 * (level + 1) + (inner_sp.indent_left or 0.0))
+                before = (
+                    inner_sp.before if inner_sp.before is not None else (sp.before if sp.before is not None else 2.0)
+                )
+                after = inner_sp.after if inner_sp.after is not None else (sp.after if sp.after is not None else 2.0)
+                para.paragraph_format.space_before = Pt(before)
+                para.paragraph_format.space_after = Pt(after)
+                para.paragraph_format.line_spacing = inner_sp.line or 1.25
+                if inner_style.alignment:
+                    para.alignment = _alignment(inner_style.alignment)
+                if inner_style.background:
+                    set_paragraph_shading(para, inner_style.background)
                 render_inline_nodes(
                     paragraph=para,
                     nodes=inner.content,
-                    font=font,
-                    link=style.link or config.link,
+                    font=_font_or(inner_style, config),
+                    link=inner_style.link or config.link,
                     mono_font=config.mono_font or "Consolas",
                 )
             elif isinstance(inner, List):
-                _render_list(doc, inner, style, config, level=level + 1)
-            elif isinstance(inner, CodeBlock):
-                _render_code_block(doc, inner, style, config)
+                _render_list(
+                    doc,
+                    inner,
+                    inner_style,
+                    block_styles,
+                    config,
+                    level=level + 1,
+                    content_width_inches=content_width_inches,
+                    content_width_twips=content_width_twips,
+                )
+            else:
+                render_block(
+                    doc=doc,
+                    block=inner,
+                    style=inner_style,
+                    block_styles=block_styles,
+                    config=config,
+                    content_width_inches=content_width_inches,
+                    content_width_twips=content_width_twips,
+                )
 
 
 def _render_table(doc: Any, block: Table, style: BlockStyle, config: DocumentConfig, content_width_twips: int) -> None:
@@ -358,11 +405,23 @@ def _alignment(value: str) -> WD_ALIGN_PARAGRAPH:
 
 def _parse_image_width(spec: str, content_width: float) -> float:
     spec = spec.strip().lower()
+    if spec == "auto":
+        return min(content_width, 5.5)
     if spec.endswith("in"):
-        return float(spec[:-2])
+        try:
+            return float(spec[:-2])
+        except ValueError as exc:
+            raise ValueError(
+                f"Invalid image width spec `{spec}`. Expected `auto`, `<number>in`, or `<number>%`."
+            ) from exc
     if spec.endswith("%"):
-        return content_width * float(spec[:-1]) / 100.0
-    return min(content_width, 5.5)
+        try:
+            return content_width * float(spec[:-1]) / 100.0
+        except ValueError as exc:
+            raise ValueError(
+                f"Invalid image width spec `{spec}`. Expected `auto`, `<number>in`, or `<number>%`."
+            ) from exc
+    raise ValueError(f"Invalid image width spec `{spec}`. Expected `auto`, `<number>in`, or `<number>%`.")
 
 
 def _table_column_widths(block: Table, style: BlockStyle, total: int) -> list[int]:
@@ -400,22 +459,38 @@ def _parse_column_widths(specs: list[str], *, total: int, columns: int) -> list[
     for spec in specs:
         value = spec.strip().lower()
         if value.endswith("fr"):
-            amount = float(value[:-2] or "1")
+            try:
+                amount = float(value[:-2] or "1")
+            except ValueError as exc:
+                raise ValueError(
+                    f"Invalid table column width spec `{spec}`. Expected `<number>fr`, `<number>in`, or `<number>%`."
+                ) from exc
             parsed.append(("fr", amount))
             fractional_total += amount
         elif value.endswith("%"):
-            amount = float(value[:-1]) / 100.0
+            try:
+                amount = float(value[:-1]) / 100.0
+            except ValueError as exc:
+                raise ValueError(
+                    f"Invalid table column width spec `{spec}`. Expected `<number>fr`, `<number>in`, or `<number>%`."
+                ) from exc
             width = int(total * amount)
             parsed.append(("abs", width))
             absolute_total += width
         elif value.endswith("in"):
-            amount = float(value[:-2])
+            try:
+                amount = float(value[:-2])
+            except ValueError as exc:
+                raise ValueError(
+                    f"Invalid table column width spec `{spec}`. Expected `<number>fr`, `<number>in`, or `<number>%`."
+                ) from exc
             width = int(amount * 1440)
             parsed.append(("abs", width))
             absolute_total += width
         else:
-            parsed.append(("fr", 1.0))
-            fractional_total += 1.0
+            raise ValueError(
+                f"Invalid table column width spec `{spec}`. Expected `<number>fr`, `<number>in`, or `<number>%`."
+            )
 
     remaining = max(total - absolute_total, 0)
     widths: list[int] = []

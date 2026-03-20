@@ -27,6 +27,22 @@ class TestParseSidecarPayload:
         with pytest.raises(ValueError, match="Unknown sidecar top-level key"):
             _parse_sidecar_payload({"extend": "../base.docx.yaml"})
 
+    def test_unknown_nested_key_is_rejected(self) -> None:
+        with pytest.raises(ValueError, match="Unknown font key"):
+            _parse_sidecar_payload({"document": {"font": {"weight": 700}}})
+
+    def test_invalid_image_width_spec_is_rejected(self) -> None:
+        with pytest.raises(ValueError, match=r"Invalid image\.width"):
+            _parse_sidecar_payload({"page_header": {"image": {"width": "wide"}}})
+
+    def test_invalid_table_column_spec_is_rejected(self) -> None:
+        with pytest.raises(ValueError, match=r"Invalid table\.columns"):
+            _parse_sidecar_payload({"defaults": {"table": {"table": {"columns": ["wide"]}}}})
+
+    def test_invalid_block_override_type_is_rejected(self) -> None:
+        with pytest.raises(ValueError, match=r"Invalid block override\.type"):
+            _parse_sidecar_payload({"blocks": {"demo": {"type": "unknown"}}})
+
 
 class TestMergeSidecarConfig:
     def test_document_merge(self) -> None:

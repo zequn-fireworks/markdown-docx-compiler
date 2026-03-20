@@ -104,7 +104,7 @@ Run `mdc doc create offer.md -o offer.docx` and you get a fully styled document.
 
 Front matter only controls document-level metadata, font, link, and page
 settings. Use region tags for header/footer content, and use `blocks:` anchors
-for top-level body block overrides.
+for body block overrides, including blocks inside list items.
 
 ## CLI reference
 

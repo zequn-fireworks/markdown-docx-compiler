@@ -9,6 +9,7 @@ This module defines the complete document object model:
 
 from __future__ import annotations
 
+from collections.abc import Iterator
 from dataclasses import dataclass, field
 from typing import Any, Literal
 
@@ -160,6 +161,15 @@ BLOCK_TYPE_NAMES: dict[type, str] = {
 
 def block_type_name(block: BlockNode) -> str:
     return BLOCK_TYPE_NAMES.get(type(block), "unknown")
+
+
+def walk_block_tree(blocks: list[BlockNode]) -> Iterator[BlockNode]:
+    """Yield blocks in document order, including nested list-item blocks."""
+    for block in blocks:
+        yield block
+        if isinstance(block, List):
+            for item in block.items:
+                yield from walk_block_tree(item.blocks)
 
 
 # ---------------------------------------------------------------------------

@@ -6,6 +6,7 @@ import argparse
 from typing import TYPE_CHECKING
 
 from markdown_docx_compiler.cli._output import emit_success
+from markdown_docx_compiler.parser.markdown import HELP_TOPIC_MARKDOWN
 
 if TYPE_CHECKING:
     pass
@@ -15,51 +16,6 @@ Reference — Supported markdown, front matter, and anchors:
 
   Run `mdc doc --help` for supported markdown features.
   Run `mdc doc create --help` for front matter keys.
-"""
-
-HELP_TOPIC_MARKDOWN = """\
-# Supported Markdown
-
-## Block features
-
-- headings (h1-h6)
-- paragraphs
-- ordered and bullet lists, including nesting
-- fenced code blocks
-- blockquotes
-- horizontal rules
-- tables (pipe syntax)
-- standalone images via ![alt](path)
-
-## Inline features
-
-- **bold**
-- *italic*
-- ~~strikethrough~~
-- `inline code`
-- [links](url)
-- hard and soft line breaks
-
-## Region tags
-
-Place content into page headers, footers, or a doc header:
-
-  <!-- docx:page_header.left -->
-  <!-- docx:page_footer.right -->
-  <!-- docx:doc_header.left -->
-
-The next top-level paragraph, heading, or standalone image is extracted into
-the region slot. Other block types are rejected.
-
-## Anchor tags
-
-Tag a block for instance-level styling:
-
-  <!-- docx:id=results-table -->
-
-Reference the anchor in the sidecar `blocks:` section.
-Anchors apply only to the next top-level body block.
-Anchors inside list items and other nested structures are not supported.
 """
 
 

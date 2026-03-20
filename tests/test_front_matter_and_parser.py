@@ -68,11 +68,14 @@ def test_parse_markdown_allows_anchor_on_top_level_list() -> None:
     assert document.body[0].meta.anchor == "task-list"
 
 
-def test_nested_anchor_in_list_item_is_rejected() -> None:
+def test_nested_anchor_in_list_item_is_captured() -> None:
     markdown = "- <!-- docx:id=item-para -->\n  First item\n"
+    document = parse_markdown(markdown, metadata={})
 
-    with pytest.raises(ValueError, match="top-level body blocks"):
-        parse_markdown(markdown, metadata={})
+    block = document.body[0]
+    assert isinstance(block, List)
+    assert isinstance(block.items[0].blocks[0], Paragraph)
+    assert block.items[0].blocks[0].meta.anchor == "item-para"
 
 
 def test_region_tag_on_unsupported_block_type_is_rejected() -> None:
@@ -81,4 +84,18 @@ def test_region_tag_on_unsupported_block_type_is_rejected() -> None:
     with pytest.raises(
         ValueError, match="Region tags only support top-level paragraphs, headings, and standalone images"
     ):
+        parse_markdown(markdown, metadata={})
+
+
+def test_region_tag_inside_list_item_is_rejected() -> None:
+    markdown = "- <!-- docx:page_footer.center -->\n  First item\n"
+
+    with pytest.raises(ValueError, match="Region tags are only supported on top-level paragraphs"):
+        parse_markdown(markdown, metadata={})
+
+
+def test_complex_blockquote_is_rejected() -> None:
+    markdown = "> paragraph\n>\n> - nested item\n"
+
+    with pytest.raises(ValueError, match="Blockquotes currently support paragraph content only"):
         parse_markdown(markdown, metadata={})

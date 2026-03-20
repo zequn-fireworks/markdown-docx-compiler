@@ -300,7 +300,7 @@ class TestHelpEpilogs:
         completed = _run_cli("document", "--help")
         assert "Supported Markdown" in completed.stdout
         assert "Anchor tags" in completed.stdout
-        assert "top-level body block" in completed.stdout
+        assert "blocks inside list items" in completed.stdout
 
     def test_spec_help_has_sidecar_reference(self, _run_cli) -> None:
         completed = _run_cli("spec", "--help")
