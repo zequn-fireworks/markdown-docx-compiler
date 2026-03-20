@@ -125,9 +125,7 @@ class TestHelpJsonConsistency:
         assert payload["reference"]["block_style_properties"] == actual
 
     def test_builtin_document_defaults_match_runtime_defaults(self, payload: dict) -> None:
-        assert payload["reference"]["builtin_document_defaults"] == dataclasses.asdict(
-            DEFAULT_DOCUMENT
-        )
+        assert payload["reference"]["builtin_document_defaults"] == dataclasses.asdict(DEFAULT_DOCUMENT)
 
     def test_resolution_order_has_four_steps(self, payload: dict) -> None:
         assert len(payload["reference"]["resolution_order"]) == 4

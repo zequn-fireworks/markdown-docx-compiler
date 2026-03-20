@@ -1,0 +1,46 @@
+name: Feature request
+description: Propose a new capability or improvement to the compiler.
+title: "[Feature]: "
+labels:
+  - enhancement
+body:
+  - type: textarea
+    id: problem
+    attributes:
+      label: What problem are you trying to solve?
+      description: Describe the authoring or rendering gap.
+      placeholder: I want to express...
+    validations:
+      required: true
+  - type: textarea
+    id: proposal
+    attributes:
+      label: Proposed solution
+      description: Describe the expected behavior and where it should live.
+      placeholder: Add support for...
+    validations:
+      required: true
+  - type: dropdown
+    id: layer
+    attributes:
+      label: Which layer should change?
+      options:
+        - Markdown authoring contract
+        - Sidecar configuration
+        - Document IR / models
+        - DOCX backend
+        - CLI / discovery output
+        - Not sure
+    validations:
+      required: true
+  - type: textarea
+    id: example
+    attributes:
+      label: Example authoring shape
+      description: Include example markdown, sidecar, or CLI usage if you have one.
+      render: markdown
+  - type: textarea
+    id: alternatives
+    attributes:
+      label: Alternatives considered
+      description: Describe workarounds or other approaches you considered.
