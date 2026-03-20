@@ -27,18 +27,14 @@ def _run_cli():
     return _run
 
 
-# ---------------------------------------------------------------------------
-# Top-level and discovery
-# ---------------------------------------------------------------------------
-
-
 class TestTopLevel:
     def test_no_args_shows_help(self, _run_cli) -> None:
         completed = _run_cli()
         assert "mdc doc create" in completed.stdout
-        assert "--template" not in completed.stdout
         assert "document" in completed.stdout
         assert "spec" in completed.stdout
+        assert "mdc template" not in completed.stdout
+        assert "mdc theme" not in completed.stdout
 
     def test_version(self, _run_cli) -> None:
         completed = _run_cli("--version")
@@ -51,10 +47,7 @@ class TestTopLevel:
         assert payload["command"] == "discovery"
         data = payload["data"]
         assert "version" in data
-        assert "document" in data["nouns"]
-        assert "spec" in data["nouns"]
-        assert "template" in data["nouns"]
-        assert "theme" in data["nouns"]
+        assert set(data["nouns"]) == {"document", "spec"}
 
     def test_discovery_nouns_have_verbs(self, _run_cli) -> None:
         completed = _run_cli("--json")
@@ -62,24 +55,20 @@ class TestTopLevel:
         assert "create" in data["nouns"]["document"]["verbs"]
         assert "validate" in data["nouns"]["document"]["verbs"]
         assert "show" in data["nouns"]["spec"]["verbs"]
-        assert "list" in data["nouns"]["template"]["verbs"]
+        assert "template" not in data["nouns"]
+        assert "theme" not in data["nouns"]
 
     def test_discovery_reference_fields(self, _run_cli) -> None:
         completed = _run_cli("--json")
         data = json.loads(completed.stdout)["data"]
         ref = data["reference"]
-        assert "<name>.docx.yaml" in ref["sidecar_autodiscovery"]
+        assert ref["sidecar_autodiscovery"] == ["<name>.docx.yaml"]
         assert ref["anchor_syntax"] == "<!-- docx:id=name -->"
-        assert "font" in ref["default_brand"]
+        assert ref["builtin_document_defaults"]["font"]["family"] == "Aptos"
         assert "paragraph" in ref["block_types"]
         assert "title" in ref["front_matter_keys"]
         assert "font" in ref["block_style_properties"]
         assert len(ref["resolution_order"]) == 4
-
-
-# ---------------------------------------------------------------------------
-# Document noun
-# ---------------------------------------------------------------------------
 
 
 class TestDocumentCreate:
@@ -159,11 +148,6 @@ class TestDocumentValidate:
         assert payload["data"]["default_output_path"].endswith("sample_report.docx")
 
 
-# ---------------------------------------------------------------------------
-# Spec noun
-# ---------------------------------------------------------------------------
-
-
 class TestSpecShow:
     def test_show_direct_path(self, _run_cli) -> None:
         completed = _run_cli(
@@ -206,6 +190,18 @@ class TestSpecValidate:
         )
         assert "Valid" in completed.stdout
 
+    def test_validate_json_includes_inherits_field(self, _run_cli) -> None:
+        completed = _run_cli(
+            "--json",
+            "spec",
+            "validate",
+            str(FIXTURE_DIR / "sample_report.docx.yaml"),
+        )
+        payload = json.loads(completed.stdout)
+        assert payload["ok"] is True
+        assert "inherits" in payload["data"]
+        assert payload["data"]["inherits"] is None
+
     def test_validate_for_document(self, _run_cli) -> None:
         completed = _run_cli(
             "spec",
@@ -219,8 +215,10 @@ class TestSpecValidate:
 class TestSpecCreate:
     def test_create_to_stdout(self, _run_cli) -> None:
         completed = _run_cli("spec", "create")
+        assert "inherits:" in completed.stdout
         assert "document:" in completed.stdout
         assert "defaults:" in completed.stdout
+        assert "../base.docx.yaml" in completed.stdout
 
     def test_create_to_file(self, _run_cli, tmp_path) -> None:
         out = tmp_path / "new.docx.yaml"
@@ -228,79 +226,20 @@ class TestSpecCreate:
         assert "Created" in completed.stdout
         assert out.exists()
         content = out.read_text()
+        assert "inherits:" in content
         assert "document:" in content
 
 
-# ---------------------------------------------------------------------------
-# Template noun
-# ---------------------------------------------------------------------------
+class TestRemovedNouns:
+    def test_template_noun_is_unavailable(self, _run_cli) -> None:
+        completed = _run_cli("template", "list", check=False)
+        assert completed.returncode == 2
+        assert "invalid choice" in completed.stderr
 
-
-class TestTemplateList:
-    def test_list_shows_default(self, _run_cli) -> None:
-        completed = _run_cli("template", "list")
-        assert "default" in completed.stdout
-
-    def test_list_json(self, _run_cli) -> None:
-        completed = _run_cli("--json", "template", "list")
-        payload = json.loads(completed.stdout)
-        assert payload["ok"] is True
-        names = [t["name"] for t in payload["data"]["templates"]]
-        assert "default" in names
-
-    def test_abbreviation_tpl(self, _run_cli) -> None:
-        completed = _run_cli("tpl", "list")
-        assert "default" in completed.stdout
-
-
-class TestTemplateShow:
-    def test_show_default(self, _run_cli) -> None:
-        completed = _run_cli("template", "show", "default")
-        assert "default" in completed.stdout
-
-    def test_show_unknown_errors(self, _run_cli) -> None:
-        completed = _run_cli("--json", "template", "show", "nonexistent", check=False)
-        assert completed.returncode != 0
-        payload = json.loads(completed.stdout)
-        assert payload["ok"] is False
-        assert payload["error"]["code"] == "UNKNOWN_TEMPLATE"
-
-
-# ---------------------------------------------------------------------------
-# Theme noun
-# ---------------------------------------------------------------------------
-
-
-class TestThemeList:
-    def test_list_shows_default(self, _run_cli) -> None:
-        completed = _run_cli("theme", "list")
-        assert "default" in completed.stdout
-
-    def test_list_json(self, _run_cli) -> None:
-        completed = _run_cli("--json", "theme", "list")
-        payload = json.loads(completed.stdout)
-        assert payload["ok"] is True
-        names = [t["name"] for t in payload["data"]["themes"]]
-        assert "default" in names
-
-
-class TestThemeShow:
-    def test_show_default(self, _run_cli) -> None:
-        completed = _run_cli("theme", "show")
-        assert "default" in completed.stdout
-        assert "font:" in completed.stdout
-
-    def test_show_json(self, _run_cli) -> None:
-        completed = _run_cli("--json", "theme", "show", "default")
-        payload = json.loads(completed.stdout)
-        assert payload["ok"] is True
-        assert payload["data"]["name"] == "default"
-        assert "variants" in payload["data"]
-
-
-# ---------------------------------------------------------------------------
-# Error handling
-# ---------------------------------------------------------------------------
+    def test_theme_noun_is_unavailable(self, _run_cli) -> None:
+        completed = _run_cli("theme", "show", check=False)
+        assert completed.returncode == 2
+        assert "invalid choice" in completed.stderr
 
 
 class TestErrorHandling:
@@ -332,6 +271,21 @@ class TestErrorHandling:
         assert payload["error"]["code"] == "FILE_NOT_FOUND"
         assert "hint" in payload["error"]
 
+    def test_explicit_spec_not_found_json(self, _run_cli) -> None:
+        completed = _run_cli(
+            "--json",
+            "document",
+            "create",
+            str(FIXTURE_DIR / "sample_report.md"),
+            "--spec",
+            "missing.docx.yaml",
+            check=False,
+        )
+        assert completed.returncode == 1
+        payload = json.loads(completed.stdout)
+        assert payload["ok"] is False
+        assert payload["error"]["code"] == "FILE_NOT_FOUND"
+
     def test_spec_no_spec_found_json(self, _run_cli, tmp_path) -> None:
         md = tmp_path / "orphan.md"
         md.write_text("# Hello")
@@ -339,11 +293,6 @@ class TestErrorHandling:
         assert completed.returncode == 1
         payload = json.loads(completed.stdout)
         assert payload["error"]["code"] == "NO_SPEC_FOUND"
-
-
-# ---------------------------------------------------------------------------
-# Help integration
-# ---------------------------------------------------------------------------
 
 
 class TestHelpEpilogs:
@@ -360,7 +309,7 @@ class TestHelpEpilogs:
         completed = _run_cli("document", "create", "--help")
         assert "Front Matter" in completed.stdout
 
-    def test_template_help_avoids_nonexistent_template_flag(self, _run_cli) -> None:
-        completed = _run_cli("template", "--help")
+    def test_spec_show_help_has_no_template_flag(self, _run_cli) -> None:
+        completed = _run_cli("spec", "show", "--help")
         assert "--template" not in completed.stdout
-        assert "mdc template list" in completed.stdout
+        assert "Show fully merged config" in completed.stdout

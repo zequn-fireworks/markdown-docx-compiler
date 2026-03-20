@@ -21,7 +21,7 @@ trademark issues.
 
 - **Vanilla markdown in, polished DOCX out** — no custom syntax required
 - **Sidecar config** for layout control (fonts, colors, column widths, per-block styling)
-- **Template plugin system** via `mdc.templates` entry points — companies can ship branded packages
+- **Composable sidecars** via `inherits` for reusable document defaults
 - **Deterministic** table, footer, and page-level styling
 - **Google Docs optimized** — import fidelity is the primary target
 - **Agent-friendly CLI** with `--json` output for tool integration
@@ -102,33 +102,11 @@ Run `mdc doc create offer.md -o offer.docx` and you get a fully styled document.
 mdc doc create report.md -o report.docx     # compile
 mdc doc validate report.md                   # dry-run parse
 mdc spec show --for report.md --resolved     # inspect merged config
-mdc template list                            # list installed templates
-mdc theme show                               # show default brand
+mdc spec create report.docx.yaml             # scaffold a sidecar
 ```
 
 Use `--json` with any command for machine-readable output.
 Run `mdc <noun> --help` for detailed reference documentation.
-
-## Template plugins
-
-Companies can distribute branded templates as installable packages.
-A template package provides `brand.yaml` (fonts, colors, variants) and
-layout files (margins, footer, defaults, selectors), registered via the
-`mdc.templates` entry point.
-
-Install a template package into the same environment as
-`markdown-docx-compiler`, then verify that it is discoverable:
-
-```bash
-pip install mdc-acme-templates
-mdc template list
-```
-
-```yaml
-template: acme-report         # use it in your sidecar
-```
-
-See `mdc template --help` for details.
 
 ## Development
 

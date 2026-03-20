@@ -104,7 +104,7 @@ def merge_region_style(base: RegionStyle, override: RegionStyle) -> RegionStyle:
 
 
 def merge_sidecar_config(base: SidecarConfig, override: SidecarConfig) -> SidecarConfig:
-    """Merge two sidecar configs (used for ``extend`` layering).
+    """Merge two sidecar configs (used for ``inherits`` layering).
 
     - ``document``, region styles: deep field merge
     - ``defaults``: per-block-type merge
@@ -131,7 +131,7 @@ def merge_sidecar_config(base: SidecarConfig, override: SidecarConfig) -> Sideca
             blocks[anchor] = ovr
 
     return SidecarConfig(
-        extend=override.extend or base.extend,
+        inherits=override.inherits or base.inherits,
         document=document,
         page_header=page_header,
         page_footer=page_footer,

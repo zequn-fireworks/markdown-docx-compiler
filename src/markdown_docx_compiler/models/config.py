@@ -97,7 +97,7 @@ class BlockOverride:
 class SidecarConfig:
     """Parsed representation of a sidecar YAML file."""
 
-    extend: str | None = None
+    inherits: str | None = None
 
     document: DocumentConfig = field(default_factory=DocumentConfig)
 

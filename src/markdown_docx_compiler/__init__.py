@@ -25,14 +25,10 @@ If `-o` is omitted, the compiler writes `<input>.docx` next to the markdown file
 
   mdc doc --help         Supported markdown features and anchors
   mdc spec --help        Sidecar config structure and resolution
-  mdc template --help    Installable template packages and usage
-  mdc theme --help       Built-in brand, variants, and customization
 
 ## Explore
 
   mdc --json             Machine-readable discovery payload (all nouns/verbs)
-  mdc template list      List installed templates
-  mdc theme show default Show the built-in theme
   mdc spec show --for report.md --resolved   Show fully merged config
 
 Use --json with any command for machine-readable output.

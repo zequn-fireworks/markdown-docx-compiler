@@ -4,6 +4,8 @@ from __future__ import annotations
 
 from pathlib import Path
 
+import pytest
+
 from markdown_docx_compiler.models.document import (
     Blockquote,
     CodeBlock,
@@ -24,6 +26,20 @@ def test_extract_front_matter_and_body() -> None:
 
     assert metadata["title"] == "Demo"
     assert body.strip() == "# Heading"
+
+
+def test_invalid_front_matter_yaml_raises() -> None:
+    raw = "---\ntitle: [unterminated\n---\n\n# Heading\n"
+
+    with pytest.raises(ValueError, match="Invalid front matter YAML"):
+        extract_front_matter(raw)
+
+
+def test_front_matter_must_be_mapping() -> None:
+    raw = "---\n- item\n---\n\n# Heading\n"
+
+    with pytest.raises(ValueError, match="Front matter must be a mapping"):
+        extract_front_matter(raw)
 
 
 def test_parse_markdown_captures_anchor_and_blocks() -> None:

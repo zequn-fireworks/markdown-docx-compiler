@@ -1,8 +1,4 @@
-"""Unit tests for the help topic system.
-
-Tests help text aggregation, discovery payload correctness, topic routing,
-and consistency between the help output and actual code objects.
-"""
+"""Unit tests for the help topic system."""
 
 from __future__ import annotations
 
@@ -24,12 +20,7 @@ from markdown_docx_compiler.parser.markdown import (
     HELP_TOPIC_ANCHORS,
     HELP_TOPIC_MARKDOWN,
 )
-from markdown_docx_compiler.styles.themes import DEFAULT_THEME
-from markdown_docx_compiler.styles.themes import help_topic as themes_help_topic
-
-# ---------------------------------------------------------------------------
-# HELP_TOPIC existence and non-emptiness
-# ---------------------------------------------------------------------------
+from markdown_docx_compiler.resolve.defaults import DEFAULT_DOCUMENT
 
 _MODULE_TOPICS = {
     "__init__": OVERVIEW_TOPIC,
@@ -52,16 +43,6 @@ class TestHelpTopicConstants:
         assert isinstance(topic_text, str)
         assert len(topic_text.strip()) > 0
 
-    def test_themes_help_topic_returns_nonempty_string(self) -> None:
-        text = themes_help_topic()
-        assert isinstance(text, str)
-        assert len(text.strip()) > 0
-
-
-# ---------------------------------------------------------------------------
-# get_help_text routing
-# ---------------------------------------------------------------------------
-
 
 class TestGetHelpText:
     """Test topic routing via get_help_text()."""
@@ -78,14 +59,9 @@ class TestGetHelpText:
         assert isinstance(text, str)
         assert len(text.strip()) > 50
 
-    def test_themes_topic_includes_default_brand(self) -> None:
-        text = get_help_text("themes")
-        assert DEFAULT_THEME.document.font in text
-
-    def test_templates_topic_avoids_nonexistent_template_flag(self) -> None:
-        text = get_help_text("templates")
-        assert "--template" not in text
-        assert "mdc template list" in text
+    def test_removed_topics_are_no_longer_valid(self) -> None:
+        assert "themes" not in VALID_TOPICS
+        assert "templates" not in VALID_TOPICS
 
     def test_unknown_topic_raises_value_error(self) -> None:
         with pytest.raises(ValueError, match="Unknown topic"):
@@ -96,31 +72,6 @@ class TestGetHelpText:
             get_help_text("bogus")
         for topic in VALID_TOPICS:
             assert topic in str(exc_info.value)
-
-
-# ---------------------------------------------------------------------------
-# themes help_topic()
-# ---------------------------------------------------------------------------
-
-
-class TestThemesHelpTopic:
-    """Test the dynamically generated themes help text."""
-
-    def test_contains_default_brand_info(self) -> None:
-        text = themes_help_topic()
-        assert DEFAULT_THEME.document.font in text
-        assert DEFAULT_THEME.document.mono_font in text
-
-    def test_contains_variants(self) -> None:
-        text = themes_help_topic()
-        assert "Variants:" in text
-        assert "body" in text
-        assert "lead" in text
-
-
-# ---------------------------------------------------------------------------
-# build_help_json / discovery payload structure
-# ---------------------------------------------------------------------------
 
 
 class TestBuildHelpJson:
@@ -138,12 +89,9 @@ class TestBuildHelpJson:
     def test_has_version(self, payload: dict) -> None:
         assert "version" in payload
 
-    def test_has_nouns(self, payload: dict) -> None:
+    def test_has_only_document_and_spec_nouns(self, payload: dict) -> None:
         nouns = payload["nouns"]
-        assert "document" in nouns
-        assert "spec" in nouns
-        assert "template" in nouns
-        assert "theme" in nouns
+        assert set(nouns) == {"document", "spec"}
 
     def test_document_noun_has_verbs(self, payload: dict) -> None:
         doc = payload["nouns"]["document"]
@@ -155,22 +103,18 @@ class TestBuildHelpJson:
         ref = payload["reference"]
         assert "sidecar_autodiscovery" in ref
         assert "anchor_syntax" in ref
-        assert "default_brand" in ref
+        assert "builtin_document_defaults" in ref
         assert "block_types" in ref
         assert "front_matter_keys" in ref
         assert "block_style_properties" in ref
         assert "resolution_order" in ref
 
-
-# ---------------------------------------------------------------------------
-# Consistency: discovery payload stays in sync with actual code
-# ---------------------------------------------------------------------------
+    def test_sidecar_autodiscovery_is_canonical(self, payload: dict) -> None:
+        assert payload["reference"]["sidecar_autodiscovery"] == ["<name>.docx.yaml"]
 
 
 class TestHelpJsonConsistency:
-    """Ensure the payload reflects the actual dataclass fields and
-    default brand, so help never drifts from the code.
-    """
+    """Ensure the payload stays in sync with the actual code objects."""
 
     @pytest.fixture()
     def payload(self) -> dict:
@@ -180,12 +124,10 @@ class TestHelpJsonConsistency:
         actual = [f.name for f in dataclasses.fields(BlockStyle)]
         assert payload["reference"]["block_style_properties"] == actual
 
-    def test_default_brand_font_matches(self, payload: dict) -> None:
-        assert payload["reference"]["default_brand"]["font"] == DEFAULT_THEME.document.font
-
-    def test_default_brand_has_variants(self, payload: dict) -> None:
-        assert "variants" in payload["reference"]["default_brand"]
-        assert "paragraph" in payload["reference"]["default_brand"]["variants"]
+    def test_builtin_document_defaults_match_runtime_defaults(self, payload: dict) -> None:
+        assert payload["reference"]["builtin_document_defaults"] == dataclasses.asdict(
+            DEFAULT_DOCUMENT
+        )
 
     def test_resolution_order_has_four_steps(self, payload: dict) -> None:
         assert len(payload["reference"]["resolution_order"]) == 4
@@ -195,13 +137,8 @@ class TestHelpJsonConsistency:
         assert "spec" in payload["nouns"]
 
 
-# ---------------------------------------------------------------------------
-# HELP_TOPIC references new CLI syntax
-# ---------------------------------------------------------------------------
-
-
 class TestHelpTopicSyntax:
-    """Verify help topics reference the new noun-verb CLI syntax."""
+    """Verify help topics reference the noun-verb CLI syntax."""
 
     def test_overview_uses_noun_verb(self) -> None:
         assert "mdc doc create" in OVERVIEW_TOPIC

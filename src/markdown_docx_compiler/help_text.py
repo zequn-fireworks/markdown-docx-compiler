@@ -25,7 +25,7 @@ Place it next to your markdown file as ``<name>.docx.yaml``.
 
 ## Structure
 
-  extend: acme-report          # inherit from another sidecar
+  inherits: ../base.docx.yaml  # inherit from another sidecar file
 
   document:
     title: My Report
@@ -67,7 +67,7 @@ Place it next to your markdown file as ``<name>.docx.yaml``.
 
 The compiler looks for sidecars next to the markdown file:
 
-  report.md  ->  report.docx.yaml  or  report.docx.yml
+  report.md  ->  report.docx.yaml
 
 Use ``mdc spec show --for report.md`` to check which sidecar is found.
 Use ``mdc doc create report.md --spec custom.docx.yaml`` to override.
@@ -77,8 +77,6 @@ TOPIC_INDEX: list[tuple[str, str]] = [
     ("markdown", "Supported markdown features and constraints"),
     ("frontmatter", "Front matter keys for document metadata"),
     ("sidecar", "Sidecar config structure and resolution order"),
-    ("themes", "Built-in brand, installed templates, and variants"),
-    ("templates", "Installable template packages and usage"),
     ("anchors", "HTML comment anchor syntax"),
 ]
 
@@ -95,8 +93,6 @@ NOUN_TOPIC_MAP: dict[str, list[str]] = {
     "document": ["markdown", "anchors"],
     "document create": ["frontmatter"],
     "spec": ["sidecar"],
-    "template": ["templates"],
-    "theme": ["themes"],
 }
 
 
@@ -117,16 +113,6 @@ def get_help_text(topic: str | None = None) -> str:
 
     if topic in _STATIC_TOPICS:
         return _STATIC_TOPICS[topic]
-
-    if topic == "themes":
-        from markdown_docx_compiler.styles.themes import help_topic
-
-        return help_topic()
-
-    if topic == "templates":
-        from markdown_docx_compiler.styles.themes import templates_help_topic
-
-        return templates_help_topic()
 
     valid = ", ".join(VALID_TOPICS)
     raise ValueError(f"Unknown topic: {topic}\nAvailable topics: {valid}")
