@@ -12,15 +12,23 @@ license = { text = "MIT" }
 authors = [
   { name = "Zequn Li" }
 ]
+keywords = ["markdown", "docx", "google-docs", "document-generation", "python-docx"]
+classifiers = [
+  "Intended Audience :: Developers",
+  "License :: OSI Approved :: MIT License",
+  "Operating System :: OS Independent",
+  "Programming Language :: Python :: 3",
+  "Programming Language :: Python :: 3.11",
+  "Programming Language :: Python :: 3.12",
+  "Programming Language :: Python :: 3.13",
+  "Topic :: Software Development :: Documentation",
+  "Topic :: Text Processing :: Markup",
+]
 dependencies = [
   "markdown-it-py>=3.0,<5.0",
   "python-docx>=1.1,<2.0",
   "PyYAML>=6.0,<7.0",
 ]
-
-[project.optional-dependencies]
-fireworks = ["mdc-fireworks-templates>=0.1"]
-templates = ["mdc-fireworks-templates>=0.1"]
 
 [project.scripts]
 mdc = "markdown_docx_compiler.cli:main"
@@ -58,6 +66,13 @@ ignore_missing_imports = true
 module = ["markdown_it.*"]
 ignore_missing_imports = true
 
+[project.urls]
+Homepage = "https://github.com/zequn-fireworks/markdown-docx-compiler"
+Documentation = "https://github.com/zequn-fireworks/markdown-docx-compiler#readme"
+Repository = "https://github.com/zequn-fireworks/markdown-docx-compiler"
+Issues = "https://github.com/zequn-fireworks/markdown-docx-compiler/issues"
+Examples = "https://github.com/zequn-fireworks/markdown-docx-compiler/tree/main/examples"
+
 [dependency-groups]
 dev = [
     "pytest>=8.4.2",
@@ -65,11 +80,4 @@ dev = [
     "mypy>=1.14",
     "pre-commit>=4.0",
     "types-pyyaml>=6.0.12.20250915",
-    "mdc-fireworks-templates",
 ]
-
-[tool.uv.workspace]
-members = ["packages/*"]
-
-[tool.uv.sources]
-mdc-fireworks-templates = { workspace = true }

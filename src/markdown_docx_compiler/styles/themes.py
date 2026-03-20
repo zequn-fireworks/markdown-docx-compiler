@@ -1,4 +1,10 @@
-"""Built-in theme defaults and template discovery for the compiler."""
+"""Built-in theme defaults and template discovery for the compiler.
+
+This module is self-contained: it defines its own ``Theme``, brand
+``DocumentConfig``, and variant ``BlockStyle`` types that are separate
+from the document pipeline models.  Template layouts are parsed into
+the pipeline's ``SidecarConfig`` via ``models.loader``.
+"""
 
 from __future__ import annotations
 
@@ -8,30 +14,121 @@ from typing import Any
 
 import yaml
 
-from markdown_docx_compiler._util import as_dict, as_float, as_str
-from markdown_docx_compiler.sidecar import (
-    BlockStyle,
-    DocumentConfig,
-    FooterConfig,
-    MarginConfig,
-    SidecarConfig,
-    _block_style_from_dict,
-    _parse_sidecar_payload,
+from markdown_docx_compiler._util import (
+    as_bool,
+    as_dict,
+    as_float,
+    as_list_of_str,
+    as_str,
 )
 
 logger = logging.getLogger(__name__)
 
 
+# ---------------------------------------------------------------------------
+# Brand-level types (used only by the theme/template system)
+# ---------------------------------------------------------------------------
+
+
+@dataclass(frozen=True)
+class FooterConfig:
+    left: str | None = None
+    center: str | None = None
+    right: str | None = None
+    show_page_numbers: bool | None = None
+
+
+@dataclass(frozen=True)
+class MarginConfig:
+    top_inches: float | None = None
+    bottom_inches: float | None = None
+    left_inches: float | None = None
+    right_inches: float | None = None
+
+
+@dataclass(frozen=True)
+class BrandDocumentConfig:
+    """Brand-level document identity for templates (fonts, colors, margins)."""
+
+    theme: str | None = None
+    title: str | None = None
+    logo_path: str | None = None
+    logo_width_inches: float | None = None
+    font: str | None = None
+    mono_font: str | None = None
+    primary_color: str | None = None
+    text_color: str | None = None
+    muted_color: str | None = None
+    border_color: str | None = None
+    page_width_inches: float | None = None
+    margin: MarginConfig = field(default_factory=MarginConfig)
+    footer: FooterConfig = field(default_factory=FooterConfig)
+
+
+@dataclass(frozen=True)
+class BrandBlockStyle:
+    """Variant block style for templates (subset of styling properties)."""
+
+    variant: str | None = None
+    width: str | None = None
+    columns: list[str] | None = None
+    alignments: list[str] | None = None
+    font_size: float | None = None
+    bold: bool | None = None
+    italic: bool | None = None
+    color: str | None = None
+    background_color: str | None = None
+    border_color: str | None = None
+    line_spacing: float | None = None
+    space_before: float | None = None
+    space_after: float | None = None
+    page_break_before: bool | None = None
+
+
+def _brand_block_style_from_dict(data: dict[str, Any] | None) -> BrandBlockStyle:
+    data = data or {}
+    return BrandBlockStyle(
+        variant=as_str(data.get("variant")),
+        width=as_str(data.get("width")),
+        columns=as_list_of_str(data.get("columns")),
+        alignments=as_list_of_str(data.get("alignments")),
+        font_size=as_float(data.get("font_size")),
+        bold=as_bool(data.get("bold")),
+        italic=as_bool(data.get("italic")),
+        color=as_str(data.get("color")),
+        background_color=as_str(data.get("background_color")),
+        border_color=as_str(data.get("border_color")),
+        line_spacing=as_float(data.get("line_spacing")),
+        space_before=as_float(data.get("space_before")),
+        space_after=as_float(data.get("space_after")),
+        page_break_before=as_bool(data.get("page_break_before")),
+    )
+
+
+# Sidecar types used only for template layouts
+# (kept here to avoid dependency on deleted old pipeline modules)
+
+
+@dataclass(frozen=True)
+class _TemplateSidecarConfig:
+    """Minimal sidecar representation for template layouts."""
+
+    template: str | None = None
+    document: BrandDocumentConfig = field(default_factory=BrandDocumentConfig)
+    defaults: dict[str, BrandBlockStyle] = field(default_factory=dict)
+    blocks: dict[str, BrandBlockStyle] = field(default_factory=dict)
+
+
 @dataclass(frozen=True)
 class Theme:
     name: str
-    document: DocumentConfig
-    variants: dict[str, dict[str, BlockStyle]] = field(default_factory=dict)
+    document: BrandDocumentConfig
+    variants: dict[str, dict[str, BrandBlockStyle]] = field(default_factory=dict)
 
 
 DEFAULT_THEME = Theme(
     name="default",
-    document=DocumentConfig(
+    document=BrandDocumentConfig(
         theme="default",
         font="Aptos",
         mono_font="Consolas",
@@ -45,27 +142,27 @@ DEFAULT_THEME = Theme(
     ),
     variants={
         "paragraph": {
-            "body": BlockStyle(),
-            "lead": BlockStyle(font_size=12.0, space_after=8.0, line_spacing=1.3),
+            "body": BrandBlockStyle(),
+            "lead": BrandBlockStyle(font_size=12.0, space_after=8.0, line_spacing=1.3),
         },
         "table": {
-            "standard": BlockStyle(background_color="F9FAFB"),
-            "benchmark": BlockStyle(background_color="EEF2FF", border_color="94A3B8", width="full"),
+            "standard": BrandBlockStyle(background_color="F9FAFB"),
+            "benchmark": BrandBlockStyle(background_color="EEF2FF", border_color="94A3B8", width="full"),
         },
         "code": {
-            "standard": BlockStyle(),
+            "standard": BrandBlockStyle(),
         },
         "blockquote": {
-            "standard": BlockStyle(border_color="94A3B8"),
+            "standard": BrandBlockStyle(border_color="94A3B8"),
         },
     },
 )
 
-_DEFAULT_LAYOUT = SidecarConfig(
+_DEFAULT_LAYOUT = _TemplateSidecarConfig(
     defaults={
-        "paragraph": BlockStyle(variant="body", line_spacing=1.25, space_after=6.0),
-        "table": BlockStyle(variant="standard", width="full"),
-        "code": BlockStyle(
+        "paragraph": BrandBlockStyle(variant="body", line_spacing=1.25, space_after=6.0),
+        "table": BrandBlockStyle(variant="standard", width="full"),
+        "code": BrandBlockStyle(
             variant="standard",
             background_color="F3F4F6",
             font_size=9.5,
@@ -73,9 +170,9 @@ _DEFAULT_LAYOUT = SidecarConfig(
             space_before=6.0,
             space_after=6.0,
         ),
-        "blockquote": BlockStyle(variant="standard", color="4B5563", space_before=8.0, space_after=8.0),
-        "list": BlockStyle(variant="standard", space_before=2.0, space_after=2.0),
-        "image": BlockStyle(variant="standard", space_before=8.0, space_after=8.0),
+        "blockquote": BrandBlockStyle(variant="standard", color="4B5563", space_before=8.0, space_after=8.0),
+        "list": BrandBlockStyle(variant="standard", space_before=2.0, space_after=2.0),
+        "image": BrandBlockStyle(variant="standard", space_before=8.0, space_after=8.0),
     },
 )
 
@@ -89,8 +186,8 @@ def load_brand_yaml(text: str) -> Theme:
     """Parse a brand YAML string into a Theme.
 
     Brand YAML defines company-level visual identity: logo placeholder, fonts,
-    colors, and variant definitions.  It does *not* include layout defaults or
-    selectors — those belong in template layout files.
+    colors, and variant definitions.  It does *not* include layout defaults —
+    those belong in template layout files.
     """
     payload: Any = yaml.safe_load(text) or {}
     if not isinstance(payload, dict):
@@ -98,9 +195,10 @@ def load_brand_yaml(text: str) -> Theme:
 
     name = as_str(payload.get("name")) or "unknown"
 
-    document = DocumentConfig(
+    document = BrandDocumentConfig(
         theme=name,
         logo_path=as_str(payload.get("logo")),
+        logo_width_inches=as_float(payload.get("logo_width_inches")),
         font=as_str(payload.get("font")),
         mono_font=as_str(payload.get("mono_font")),
         primary_color=as_str(payload.get("primary_color")),
@@ -110,11 +208,11 @@ def load_brand_yaml(text: str) -> Theme:
         page_width_inches=as_float(payload.get("page_width_inches")),
     )
 
-    variants: dict[str, dict[str, BlockStyle]] = {}
+    variants: dict[str, dict[str, BrandBlockStyle]] = {}
     for block_type, variant_dict in as_dict(payload.get("variants")).items():
         if isinstance(variant_dict, dict):
             variants[block_type] = {
-                variant_name: _block_style_from_dict(as_dict(style_data))
+                variant_name: _brand_block_style_from_dict(as_dict(style_data))
                 for variant_name, style_data in variant_dict.items()
             }
 
@@ -125,15 +223,45 @@ def load_brand_yaml(text: str) -> Theme:
 # Template discovery via entry points
 # ---------------------------------------------------------------------------
 
-_template_cache: dict[str, tuple[Theme, SidecarConfig]] | None = None
+
+def _parse_template_layout(payload: dict[str, Any]) -> _TemplateSidecarConfig:
+    """Parse a template layout YAML dict into a ``_TemplateSidecarConfig``."""
+    doc_data = payload.get("document") or {}
+    doc = BrandDocumentConfig(
+        theme=as_str(doc_data.get("theme")),
+        title=as_str(doc_data.get("title")),
+        font=as_str(doc_data.get("font")),
+        mono_font=as_str(doc_data.get("mono_font")),
+        primary_color=as_str(doc_data.get("primary_color")),
+        text_color=as_str(doc_data.get("text_color")),
+        muted_color=as_str(doc_data.get("muted_color")),
+        border_color=as_str(doc_data.get("border_color")),
+    )
+    defaults: dict[str, BrandBlockStyle] = {}
+    for key, value in (payload.get("defaults") or {}).items():
+        if isinstance(value, dict):
+            defaults[key] = _brand_block_style_from_dict(value)
+    blocks: dict[str, BrandBlockStyle] = {}
+    for key, value in (payload.get("blocks") or {}).items():
+        if isinstance(value, dict):
+            blocks[key] = _brand_block_style_from_dict(value)
+    return _TemplateSidecarConfig(
+        template=as_str(payload.get("template")),
+        document=doc,
+        defaults=defaults,
+        blocks=blocks,
+    )
 
 
-def _discover_templates() -> dict[str, tuple[Theme, SidecarConfig]]:
+_template_cache: dict[str, tuple[Theme, _TemplateSidecarConfig]] | None = None
+
+
+def _discover_templates() -> dict[str, tuple[Theme, _TemplateSidecarConfig]]:
     """Scan ``mdc.templates`` entry points and load all templates.
 
     Each entry point resolves to a ``Traversable`` package directory containing:
     - ``brand.yaml`` — shared company brand (parsed into a Theme)
-    - Other ``.yaml`` files — template layouts (parsed into SidecarConfigs)
+    - Other ``.yaml`` files — template layouts (parsed into _TemplateSidecarConfigs)
 
     Template naming: ``default.yaml`` registers as ``{company}``,
     others register as ``{company}-{stem}``.
@@ -144,7 +272,7 @@ def _discover_templates() -> dict[str, tuple[Theme, SidecarConfig]]:
 
     from importlib.metadata import entry_points
 
-    templates: dict[str, tuple[Theme, SidecarConfig]] = {}
+    templates: dict[str, tuple[Theme, _TemplateSidecarConfig]] = {}
 
     for ep in entry_points(group="mdc.templates"):
         try:
@@ -163,23 +291,23 @@ def _discover_templates() -> dict[str, tuple[Theme, SidecarConfig]]:
                 layout_payload: Any = yaml.safe_load(layout_text) or {}
                 if not isinstance(layout_payload, dict):
                     continue
-                layout = _parse_sidecar_payload(layout_payload)
+                layout = _parse_template_layout(layout_payload)
 
                 stem = item.name.rsplit(".", 1)[0]
                 template_name = company if stem == "default" else f"{company}-{stem}"
                 templates[template_name] = (theme, layout)
-        except Exception:
+        except (OSError, ValueError, KeyError, yaml.YAMLError):
             logger.warning("Failed to load templates from entry point %s", ep.name, exc_info=True)
 
     _template_cache = templates
     return templates
 
 
-def get_template(name: str) -> tuple[Theme, SidecarConfig] | None:
+def get_template(name: str) -> tuple[Theme, _TemplateSidecarConfig] | None:
     """Look up an installed or built-in template by name.
 
     The ``"default"`` template is always available as a built-in fallback.
-    Returns ``(theme, base_sidecar)`` or ``None`` if the template is not found.
+    Returns ``(theme, layout)`` or ``None`` if the template is not found.
     """
     if name == "default":
         return DEFAULT_THEME, _DEFAULT_LAYOUT
@@ -240,19 +368,21 @@ TEMPLATES_HELP_TOPIC = """\
 # Templates
 
 Templates bundle a company's brand identity (fonts, colors, variants) with
-document-type layout (margins, footer, defaults, selectors) into installable
+document-type layout (margins, footer, defaults) into installable
 packages.  Use a template so you only write per-document overrides.
 
 ## Install
 
-  uv add markdown-docx-compiler[fireworks]    # one company
-  uv add markdown-docx-compiler[templates]    # all companies
+Install a template package into the same environment as
+`markdown-docx-compiler`:
+
+  pip install mdc-acme-templates
 
 ## Usage
 
 Set the template in your sidecar:
 
-  template: fireworks-rca
+  template: acme-report
 
   document:
     footer:
@@ -266,22 +396,22 @@ Set the template in your sidecar:
 Or in front matter:
 
   ---
-  template: fireworks-rca
+  template: acme-report
   ---
 
-Or via CLI:
+Then inspect or compile as usual:
 
-  mdc document create report.md --template fireworks-rca
+  mdc template list
+  mdc template show acme-report
+  mdc doc create report.md -o report.docx
 
 ## Resolution order
 
 When a template is active, styles cascade as:
 
-  1. Brand (from template)  - fonts, colors, variant definitions
-  2. Template layout         - margins, footer, defaults, selectors
-  3. User sidecar            - per-document overrides
-  4. Front matter            - inline overrides
-  5. CLI flags               - command-line overrides
+  1. Built-in defaults       - base fonts, colors, margins
+  2. Sidecar config          - document settings, defaults, block overrides
+  3. Front matter            - inline document-level overrides
 
 ## Providing a logo
 
@@ -309,6 +439,7 @@ def templates_help_topic() -> str:
         lines.append("")
         lines.append("  (none installed)")
         lines.append("")
-        lines.append("Install with:  uv add markdown-docx-compiler[templates]")
+        lines.append("Install a package exposing the `mdc.templates` entry point, for example:")
+        lines.append("  pip install mdc-acme-templates")
         lines.append("")
     return "\n".join(lines)

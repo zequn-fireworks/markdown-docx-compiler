@@ -25,12 +25,12 @@ Compile AI-authored markdown into polished .docx for Google Docs import.
 
 Commands follow <noun> <verb> structure:
 
-  mdc document create report.md -o report.docx
-  mdc doc create report.md --template fireworks
-  mdc document validate report.md
+  mdc doc create report.md -o report.docx
+  mdc doc create report.md --spec report.docx.yaml -o report.docx
+  mdc doc validate report.md
   mdc spec show --for report.md --resolved
   mdc template list
-  mdc theme list
+  mdc theme show default
 
 Abbreviations: document=doc, template=tpl
 

@@ -7,6 +7,7 @@ dist/
 build/
 *.egg-info/
 *.docx
+!examples/**/*.docx
 *.tmp
 .ruff_cache/
 .DS_Store

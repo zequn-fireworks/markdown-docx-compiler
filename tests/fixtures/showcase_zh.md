@@ -1,8 +1,15 @@
 ---
 title: "人工复核示例文档"
-template: fireworks
-footer_center: "人工复核"
 ---
+
+<!-- docx:page_footer.left -->
+Confidential
+
+<!-- docx:page_footer.center -->
+人工复核
+
+<!-- docx:page_footer.right -->
+中文示例
 
 # 人工复核示例文档
 

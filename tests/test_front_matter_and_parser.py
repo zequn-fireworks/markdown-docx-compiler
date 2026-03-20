@@ -4,16 +4,17 @@ from __future__ import annotations
 
 from pathlib import Path
 
-from markdown_docx_compiler.ir import (
-    BlockQuoteBlock,
+from markdown_docx_compiler.models.document import (
+    Blockquote,
     CodeBlock,
-    HeadingBlock,
-    ImageBlock,
-    ListBlock,
-    ParagraphBlock,
-    TableBlock,
+    Heading,
+    Image,
+    List,
+    Paragraph,
+    Table,
 )
-from markdown_docx_compiler.parser import extract_front_matter, parse_markdown
+from markdown_docx_compiler.parser.front_matter import extract_front_matter
+from markdown_docx_compiler.parser.markdown import parse_markdown
 
 
 def test_extract_front_matter_and_body() -> None:
@@ -30,15 +31,15 @@ def test_parse_markdown_captures_anchor_and_blocks() -> None:
     metadata, body = extract_front_matter(fixture.read_text(encoding="utf-8"))
     document = parse_markdown(body, metadata=metadata, md_dir=str(fixture.parent))
 
-    assert isinstance(document.blocks[0], HeadingBlock)
-    assert isinstance(document.blocks[1], ParagraphBlock)
-    assert isinstance(document.blocks[2], HeadingBlock)
-    assert isinstance(document.blocks[3], TableBlock)
-    assert document.blocks[3].meta.anchor == "results-table"
-    assert document.blocks[3].column_count == 3
-    assert isinstance(document.blocks[4], HeadingBlock)
-    assert isinstance(document.blocks[5], ListBlock)
-    assert isinstance(document.blocks[6], BlockQuoteBlock)
-    assert isinstance(document.blocks[7], CodeBlock)
-    assert isinstance(document.blocks[8], ImageBlock)
-    assert isinstance(document.blocks[9], ParagraphBlock)
+    assert isinstance(document.body[0], Heading)
+    assert isinstance(document.body[1], Paragraph)
+    assert isinstance(document.body[2], Heading)
+    assert isinstance(document.body[3], Table)
+    assert document.body[3].meta.anchor == "results-table"
+    assert document.body[3].column_count == 3
+    assert isinstance(document.body[4], Heading)
+    assert isinstance(document.body[5], List)
+    assert isinstance(document.body[6], Blockquote)
+    assert isinstance(document.body[7], CodeBlock)
+    assert isinstance(document.body[8], Image)
+    assert isinstance(document.body[9], Paragraph)

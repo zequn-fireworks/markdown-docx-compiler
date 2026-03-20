@@ -1,24 +1,27 @@
 document:
-  footer:
-    left: "Fireworks AI  |  Confidential"
-    center: "人工复核"
-    right: "中文示例"
+  font:
+    family: Aptos
+    size: 10.5
+    color: "111827"
+
+page_footer:
+  font: { size: 8, color: "6B7280" }
+  border:
+    top: { color: "D1D5DB", width: 1, style: single }
 
 defaults:
   paragraph:
-    variant: body
+    spacing: { after: 6, line: 1.25 }
   table:
-    variant: standard
-    width: full
-
-selectors:
-  - match:
-      type: paragraph
-      heading: "人工复核示例文档"
-    apply:
-      variant: lead
+    table: { header_row: true }
 
 blocks:
   zh-results-table:
-    variant: benchmark
-    columns: [2fr, 1fr, 1fr]
+    type: table
+    table: { columns: [2fr, 1fr, 1fr] }
+    background: "EFF6FF"
+    border:
+      top: { color: "93C5FD" }
+      bottom: { color: "93C5FD" }
+      left: { color: "93C5FD" }
+      right: { color: "93C5FD" }

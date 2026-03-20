@@ -35,7 +35,8 @@ def _run_cli():
 class TestTopLevel:
     def test_no_args_shows_help(self, _run_cli) -> None:
         completed = _run_cli()
-        assert "mdc document create" in completed.stdout
+        assert "mdc doc create" in completed.stdout
+        assert "--template" not in completed.stdout
         assert "document" in completed.stdout
         assert "spec" in completed.stdout
 
@@ -72,9 +73,8 @@ class TestTopLevel:
         assert "font" in ref["default_brand"]
         assert "paragraph" in ref["block_types"]
         assert "title" in ref["front_matter_keys"]
-        assert "variant" in ref["block_style_properties"]
-        assert "type" in ref["selector_match_fields"]
-        assert len(ref["resolution_order"]) == 5
+        assert "font" in ref["block_style_properties"]
+        assert len(ref["resolution_order"]) == 4
 
 
 # ---------------------------------------------------------------------------
@@ -112,7 +112,6 @@ class TestDocumentCreate:
         payload = json.loads(completed.stdout)
         assert payload["ok"] is True
         assert payload["command"] == "document create"
-        assert payload["data"]["theme"] == "fireworks"
 
     def test_abbreviation_doc(self, _run_cli, tmp_path) -> None:
         out = tmp_path / "out.docx"
@@ -152,7 +151,6 @@ class TestDocumentValidate:
         payload = json.loads(completed.stdout)
         assert payload["ok"] is True
         assert payload["data"]["dry_run"] is True
-        assert payload["data"]["theme"] == "fireworks"
 
 
 # ---------------------------------------------------------------------------
@@ -189,8 +187,8 @@ class TestSpecShow:
         )
         payload = json.loads(completed.stdout)
         assert payload["ok"] is True
-        assert "theme" in payload["data"]
         assert "document_config" in payload["data"]
+        assert "resolved_sidecar" in payload["data"]
 
 
 class TestSpecValidate:
@@ -332,13 +330,17 @@ class TestHelpEpilogs:
     def test_document_help_has_markdown_reference(self, _run_cli) -> None:
         completed = _run_cli("document", "--help")
         assert "Supported Markdown" in completed.stdout
-        assert "Anchors" in completed.stdout
+        assert "Anchor tags" in completed.stdout
 
     def test_spec_help_has_sidecar_reference(self, _run_cli) -> None:
         completed = _run_cli("spec", "--help")
         assert "Sidecar Config" in completed.stdout
-        assert "Selectors" in completed.stdout
 
     def test_document_create_help_has_frontmatter(self, _run_cli) -> None:
         completed = _run_cli("document", "create", "--help")
         assert "Front Matter" in completed.stdout
+
+    def test_template_help_avoids_nonexistent_template_flag(self, _run_cli) -> None:
+        completed = _run_cli("template", "--help")
+        assert "--template" not in completed.stdout
+        assert "mdc template list" in completed.stdout

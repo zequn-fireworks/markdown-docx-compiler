@@ -4,7 +4,7 @@ This `AGENTS.md` is for agents and contributors **refining the repository
 itself**.
 
 If an agent is **using** the installed package to compile documents, run
-`mdc help` for the packaged usage documentation.
+`mdc <noun> --help` for usage documentation (e.g. `mdc doc --help`).
 
 ## Repo purpose
 
@@ -34,11 +34,22 @@ When changing the repo, preserve these assumptions:
 
 ## Repo structure
 
-- `src/markdown_docx_compiler/` — core package
-- `src/markdown_docx_compiler/parser/` — markdown/front matter parsing
-- `src/markdown_docx_compiler/ir/` — typed intermediate representation
-- `src/markdown_docx_compiler/styles/` — themes and style defaults
-- `src/markdown_docx_compiler/backend/docx/` — DOCX renderer and OOXML helpers
+- `src/markdown_docx_compiler/compile.py` — top-level compiler orchestration
+- `src/markdown_docx_compiler/parser/markdown.py` — markdown parser (produces `models.document` IR)
+- `src/markdown_docx_compiler/parser/front_matter.py` — YAML front matter extraction
+- `src/markdown_docx_compiler/models/` — typed document IR, config, and style dataclasses
+- `src/markdown_docx_compiler/models/loader.py` — sidecar YAML loading into config models
+- `src/markdown_docx_compiler/resolve/` — 3-tier style cascade (defaults, sidecar, front matter)
+- `src/markdown_docx_compiler/backend/docx/doc_renderer.py` — top-level DOCX renderer
+- `src/markdown_docx_compiler/backend/docx/blocks.py` — block-level rendering
+- `src/markdown_docx_compiler/backend/docx/inlines.py` — inline-level rendering
+- `src/markdown_docx_compiler/backend/docx/regions.py` — region rendering (headers, footers)
+- `src/markdown_docx_compiler/backend/docx/ooxml_helpers.py` — low-level OOXML XML helpers
+- `src/markdown_docx_compiler/styles/` — themes, brand defaults, and template discovery
+- `src/markdown_docx_compiler/cli/` — noun-verb CLI (`mdc doc`, `mdc spec`, `mdc template`, `mdc theme`)
+- `src/markdown_docx_compiler/help_text.py` — help topic aggregator and sidecar reference
+
+- `examples/` — sample documents with sidecar configs and preview images
 - `tests/fixtures/` — markdown and sidecar fixture inputs
 - `tests/figures/` — image assets used by fixtures
 - `tests/manual_review_output/` — generated review artifacts, ignored by git

@@ -1,4 +1,8 @@
-"""Low-level OOXML helpers for precise DOCX layout control."""
+"""Low-level OOXML helpers for precise DOCX layout control.
+
+These operate directly on python-docx XML elements where the high-level
+API doesn't expose enough granularity.
+"""
 
 from __future__ import annotations
 
@@ -15,8 +19,8 @@ def rgb(hex_color: str) -> RGBColor:
     return RGBColor(int(value[0:2], 16), int(value[2:4], 16), int(value[4:6], 16))
 
 
-def set_secondary_font(run: Run, font_name: str) -> None:
-    """Set east Asia and complex-script font slots."""
+def set_all_fonts(run: Run, font_name: str) -> None:
+    """Set ascii, east-Asia, and complex-script font slots on a run."""
     r_pr = run._r.get_or_add_rPr()
     r_fonts = r_pr.find(qn("w:rFonts"))
     if r_fonts is None:
@@ -37,8 +41,11 @@ def add_page_field(paragraph: Paragraph, *, font_name: str, font_size: float, co
         run.font.name = font_name
         run.font.size = Pt(font_size)
         run.font.color.rgb = rgb(color)
-        set_secondary_font(run, font_name)
+        set_all_fonts(run, font_name)
         run._r.append(parse_xml(xml_value))
+
+
+# -- Table helpers ---------------------------------------------------------
 
 
 def set_table_layout_fixed(table: Table) -> None:
@@ -58,12 +65,11 @@ def set_table_width_dxa(table: Table, width_twips: int) -> None:
 def set_table_grid(table: Table, column_widths_twips: list[int]) -> None:
     for old in table._tbl.findall(qn("w:tblGrid")):
         table._tbl.remove(old)
-    cols = "".join(f'<w:gridCol w:w="{width}"/>' for width in column_widths_twips)
+    cols = "".join(f'<w:gridCol w:w="{w}"/>' for w in column_widths_twips)
     table._tbl.insert(1, parse_xml(f"<w:tblGrid {nsdecls('w')}>{cols}</w:tblGrid>"))
 
 
 def set_table_borders(table: Table, color: str) -> None:
-    """Apply full borders with Google-Docs-friendly left/right tags."""
     tbl_pr = table._tbl.tblPr
     for old in tbl_pr.findall(qn("w:tblBorders")):
         tbl_pr.remove(old)
@@ -97,6 +103,9 @@ def set_table_cell_margins(table: Table, *, top: int = 40, left: int = 80, botto
     )
 
 
+# -- Cell helpers ----------------------------------------------------------
+
+
 def set_cell_shading(cell: _Cell, color: str) -> None:
     cell._tc.get_or_add_tcPr().append(parse_xml(f'<w:shd {nsdecls("w")} w:fill="{color}" w:val="clear"/>'))
 
@@ -112,10 +121,19 @@ def set_cell_vertical_alignment(cell: _Cell, val: str = "center") -> None:
     cell._tc.get_or_add_tcPr().append(parse_xml(f'<w:vAlign {nsdecls("w")} w:val="{val}"/>'))
 
 
-def set_paragraph_left_border(paragraph: Paragraph, color: str) -> None:
+# -- Paragraph helpers -----------------------------------------------------
+
+
+def set_paragraph_shading(paragraph: Paragraph, color: str) -> None:
+    paragraph._p.get_or_add_pPr().append(parse_xml(f'<w:shd {nsdecls("w")} w:fill="{color}" w:val="clear"/>'))
+
+
+def set_paragraph_left_border(paragraph: Paragraph, color: str, *, width: int = 12) -> None:
     p_pr = paragraph._p.get_or_add_pPr()
     p_pr.append(
-        parse_xml(f'<w:pBdr {nsdecls("w")}>  <w:left w:val="single" w:sz="12" w:space="8" w:color="{color}"/></w:pBdr>')
+        parse_xml(
+            f'<w:pBdr {nsdecls("w")}>  <w:left w:val="single" w:sz="{width}" w:space="8" w:color="{color}"/></w:pBdr>'
+        )
     )
 
 
@@ -128,5 +146,8 @@ def set_paragraph_bottom_border(paragraph: Paragraph, color: str) -> None:
     )
 
 
-def set_paragraph_shading(paragraph: Paragraph, color: str) -> None:
-    paragraph._p.get_or_add_pPr().append(parse_xml(f'<w:shd {nsdecls("w")} w:fill="{color}" w:val="clear"/>'))
+def set_paragraph_top_border(paragraph: Paragraph, color: str) -> None:
+    p_pr = paragraph._p.get_or_add_pPr()
+    p_pr.append(
+        parse_xml(f'<w:pBdr {nsdecls("w")}>  <w:top w:val="single" w:sz="4" w:space="4" w:color="{color}"/></w:pBdr>')
+    )

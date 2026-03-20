@@ -4,9 +4,11 @@ from __future__ import annotations
 
 from pathlib import Path
 
-from markdown_docx_compiler.parser import extract_front_matter, parse_markdown
-from markdown_docx_compiler.selectors import resolve_block_style, resolve_document_config
-from markdown_docx_compiler.sidecar import load_sidecar
+from markdown_docx_compiler.models.document import TextContent
+from markdown_docx_compiler.models.loader import load_sidecar
+from markdown_docx_compiler.parser.front_matter import extract_front_matter
+from markdown_docx_compiler.parser.markdown import parse_markdown
+from markdown_docx_compiler.resolve.cascade import resolve_block_style, resolve_document_config
 
 
 def test_sidecar_resolves_document_and_block_styles() -> None:
@@ -16,23 +18,27 @@ def test_sidecar_resolves_document_and_block_styles() -> None:
 
     metadata, body = extract_front_matter(markdown_path.read_text(encoding="utf-8"))
     sidecar = load_sidecar(sidecar_path)
-    theme, document_config, resolved_sidecar = resolve_document_config(
-        front_matter=metadata,
+    document_config, resolved_sidecar = resolve_document_config(
         sidecar=sidecar,
-        cli_overrides=None,
+        front_matter=metadata,
         base_dir=fixture_dir,
     )
     document = parse_markdown(body, metadata=metadata, md_dir=str(fixture_dir))
 
-    first_paragraph = document.blocks[1]
-    results_table = document.blocks[3]
-    paragraph_style = resolve_block_style(block=first_paragraph, sidecar=resolved_sidecar, theme=theme)
-    table_style = resolve_block_style(block=results_table, sidecar=resolved_sidecar, theme=theme)
+    assert document_config.font.family == "Aptos"
 
-    assert theme.name == "fireworks"
-    assert document_config.footer.left == "Fireworks AI  |  Confidential"
-    assert document_config.footer.center == "2026-03-16"
-    assert document_config.footer.right == "Draft"
-    assert paragraph_style.variant == "lead"
-    assert table_style.variant == "benchmark"
-    assert table_style.columns == ["3fr", "1fr", "1fr"]
+    assert len(document.page_footer.left) == 1
+    assert isinstance(document.page_footer.left[0], TextContent)
+    assert len(document.page_footer.center) == 1
+    assert isinstance(document.page_footer.center[0], TextContent)
+    assert len(document.page_footer.right) == 1
+    assert isinstance(document.page_footer.right[0], TextContent)
+
+    results_table = document.body[3]
+    table_style = resolve_block_style(
+        block=results_table,
+        sidecar=resolved_sidecar,
+        document=document_config,
+    )
+    assert table_style.table is not None
+    assert table_style.table.columns == ["3fr", "1fr", "1fr"]

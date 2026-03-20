@@ -1,84 +1,159 @@
 # markdown-docx-compiler
 
-A standalone compiler for turning AI-authored markdown into polished `.docx`
-documents designed to import cleanly into Google Docs for final human editing.
+A standalone compiler that turns AI-authored markdown into polished `.docx`
+files optimized for Google Docs import and human editing.
 
-This is not a generic markdown converter. It optimizes for:
+## Samples
 
-- vanilla-markdown-friendly source documents
-- external sidecar config for layout control (column widths, themes, per-block styling)
-- deterministic table, footer, and page-level styling
-- agent-friendly CLI with JSON output
+Explore complete example document projects in the repository:
+
+- [`google-offer/`][google-example] - fictionalized offer letter with a logo
+  header and compensation table. [Markdown][google-md], [Sidecar][google-yaml],
+  [PDF preview][google-pdf]
+- [`openai-offer/`][openai-example] - fictionalized offer letter with a
+  two-column header and equity section. [Markdown][openai-md],
+  [Sidecar][openai-yaml], [PDF preview][openai-pdf]
+
+Company names in the examples are intentionally fictionalized to avoid
+trademark issues.
+
+## Features
+
+- **Vanilla markdown in, polished DOCX out** — no custom syntax required
+- **Sidecar config** for layout control (fonts, colors, column widths, per-block styling)
+- **Template plugin system** via `mdc.templates` entry points — companies can ship branded packages
+- **Deterministic** table, footer, and page-level styling
+- **Google Docs optimized** — import fidelity is the primary target
+- **Agent-friendly CLI** with `--json` output for tool integration
 
 ## Quick start
 
 ```bash
-uv run mdc compile report.md -o report.docx
+pip install markdown-docx-compiler
+# or install the CLI with uv
+uv tool install markdown-docx-compiler
+```
+
+Compile a document:
+
+```bash
+mdc doc create report.md -o report.docx
 ```
 
 With a sidecar config:
 
 ```bash
-uv run mdc compile report.md --spec report.docx.yaml -o report.docx
+mdc doc create report.md --spec report.docx.yaml -o report.docx
 ```
 
-Need usage documentation?
+## How it works
 
-```bash
-uv run mdc help
-uv run mdc help sidecar
-uv run mdc help themes
-```
-
-## Example
-
-`report.md`
+Write standard markdown with optional YAML front matter:
 
 ```md
 ---
-title: Benchmark Report
-theme: fireworks
-footer_center: 2026-03-16
+title: Offer of Employment
+logo_path: ./logo.png
+footer_center: "2026-03-19"
 ---
 
-# Benchmark Report
+# Offer of Employment
 
-This is the opening summary paragraph.
+Dear **Jordan Chen**, ...
 
-<!-- docx:id=results-table -->
-| Model | TTFT | TPS |
-| --- | ---: | ---: |
-| A | 120 | 80 |
+## Compensation
+
+<!-- docx:id=comp-table -->
+| Component | Details |
+| --- | --- |
+| Base Salary | $218,000 per year |
+| Equity (RSUs) | 1,400 shares over 4 years |
 ```
 
-`report.docx.yaml`
+Place a sidecar YAML next to it for styling:
 
 ```yaml
 document:
-  footer:
-    right: Draft
+  font: { family: Arial, size: 10.5, color: "202124" }
+  page:
+    margin: { top: 0.8, bottom: 0.75, left: 1.0, right: 1.0 }
 
-selectors:
-  - match:
-      type: paragraph
-      heading: "Benchmark Report"
-    apply:
-      variant: lead
+page_footer:
+  font: { size: 8, color: "5F6368" }
+
+defaults:
+  paragraph:
+    spacing: { after: 6, line: 1.15 }
 
 blocks:
-  results-table:
-    variant: benchmark
-    columns: [3fr, 1fr, 1fr]
+  comp-table:
+    type: table
+    table: { columns: [1fr, 3fr] }
 ```
+
+Run `mdc doc create offer.md -o offer.docx` and you get a fully styled document.
+
+## CLI reference
+
+```bash
+mdc doc create report.md -o report.docx     # compile
+mdc doc validate report.md                   # dry-run parse
+mdc spec show --for report.md --resolved     # inspect merged config
+mdc template list                            # list installed templates
+mdc theme show                               # show default brand
+```
+
+Use `--json` with any command for machine-readable output.
+Run `mdc <noun> --help` for detailed reference documentation.
+
+## Template plugins
+
+Companies can distribute branded templates as installable packages.
+A template package provides `brand.yaml` (fonts, colors, variants) and
+layout files (margins, footer, defaults, selectors), registered via the
+`mdc.templates` entry point.
+
+Install a template package into the same environment as
+`markdown-docx-compiler`, then verify that it is discoverable:
+
+```bash
+pip install mdc-acme-templates
+mdc template list
+```
+
+```yaml
+template: acme-report         # use it in your sidecar
+```
+
+See `mdc template --help` for details.
 
 ## Development
 
 ```bash
 uv sync
-uv run pytest
+uv run ruff check src/ tests/
+uv run ruff format --check src/ tests/
+uv run mypy src/
+uv run pytest tests/
+uv build
+uvx twine check dist/*
 ```
 
 ## Docs
 
-- Installed users and agents: `mdc help` and `mdc help <topic>`
-- Repository maintainers and contributors: `AGENTS.md`
+- Users and agents: `mdc <noun> --help` (e.g. `mdc doc --help`, `mdc spec --help`)
+- Maintainers: [`AGENTS.md`][agents-doc]
+- Release process: [`RELEASING.md`][releasing-doc]
+- Examples: [`examples/`][examples-doc]
+
+[agents-doc]: https://github.com/zequn-fireworks/markdown-docx-compiler/blob/main/AGENTS.md
+[examples-doc]: https://github.com/zequn-fireworks/markdown-docx-compiler/tree/main/examples
+[google-example]: https://github.com/zequn-fireworks/markdown-docx-compiler/tree/main/examples/google-offer
+[google-md]: https://github.com/zequn-fireworks/markdown-docx-compiler/blob/main/examples/google-offer/offer.md
+[google-pdf]: https://github.com/zequn-fireworks/markdown-docx-compiler/blob/main/examples/google-offer/offer.pdf
+[google-yaml]: https://github.com/zequn-fireworks/markdown-docx-compiler/blob/main/examples/google-offer/offer.docx.yaml
+[openai-example]: https://github.com/zequn-fireworks/markdown-docx-compiler/tree/main/examples/openai-offer
+[openai-md]: https://github.com/zequn-fireworks/markdown-docx-compiler/blob/main/examples/openai-offer/offer.md
+[openai-pdf]: https://github.com/zequn-fireworks/markdown-docx-compiler/blob/main/examples/openai-offer/offer.pdf
+[openai-yaml]: https://github.com/zequn-fireworks/markdown-docx-compiler/blob/main/examples/openai-offer/offer.docx.yaml
+[releasing-doc]: https://github.com/zequn-fireworks/markdown-docx-compiler/blob/main/RELEASING.md

@@ -36,9 +36,7 @@ def test_compile_sample_report_to_docx(tmp_path: Path) -> None:
     grid_widths = [int(value) for value in re.findall(r'w:gridCol w:w="(\d+)"', document_xml)]
     assert len(grid_widths) >= 3
     assert grid_widths[0] > grid_widths[1]
-    assert 'w:eastAsia="Helvetica Neue"' in document_xml
-    assert "Fireworks AI  |  Confidential" in footer_xml
+    assert "Confidential" in footer_xml
     assert "2026-03-16" in footer_xml
     assert "Draft" in footer_xml
-    assert " PAGE " in footer_xml
     assert media_files
