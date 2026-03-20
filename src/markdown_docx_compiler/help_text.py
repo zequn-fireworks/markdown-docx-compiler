@@ -11,10 +11,12 @@ from __future__ import annotations
 from typing import Any
 
 from markdown_docx_compiler import HELP_TOPIC as _OVERVIEW
-from markdown_docx_compiler.cli._document import HELP_TOPIC_MARKDOWN as _MARKDOWN
 from markdown_docx_compiler.parser.front_matter import HELP_TOPIC as _FRONTMATTER
 from markdown_docx_compiler.parser.markdown import (
     HELP_TOPIC_ANCHORS as _ANCHORS,
+)
+from markdown_docx_compiler.parser.markdown import (
+    HELP_TOPIC_MARKDOWN as _MARKDOWN,
 )
 
 HELP_TOPIC_SIDECAR = """\
@@ -56,12 +58,14 @@ Place it next to your markdown file as ``<name>.docx.yaml``.
       type: table
       table: { columns: [3fr, 1fr, 1fr] }
 
+Anchors in ``blocks:`` target body blocks, including blocks inside list items.
+
 ## Resolution order
 
   1. Built-in defaults
   2. Sidecar document globals + type defaults
   3. Sidecar block instance overrides (by anchor)
-  4. Front matter overrides
+  4. Front matter overrides document config only
 
 ## Auto-discovery
 
@@ -77,7 +81,7 @@ TOPIC_INDEX: list[tuple[str, str]] = [
     ("markdown", "Supported markdown features and constraints"),
     ("frontmatter", "Front matter keys for document metadata"),
     ("sidecar", "Sidecar config structure and resolution order"),
-    ("anchors", "HTML comment anchor syntax"),
+    ("anchors", "docx tag anchor syntax"),
 ]
 
 VALID_TOPICS: list[str] = [name for name, _ in TOPIC_INDEX]

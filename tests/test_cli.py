@@ -300,6 +300,7 @@ class TestHelpEpilogs:
         completed = _run_cli("document", "--help")
         assert "Supported Markdown" in completed.stdout
         assert "Anchor tags" in completed.stdout
+        assert "blocks inside list items" in completed.stdout
 
     def test_spec_help_has_sidecar_reference(self, _run_cli) -> None:
         completed = _run_cli("spec", "--help")
@@ -312,4 +313,4 @@ class TestHelpEpilogs:
     def test_spec_show_help_has_no_template_flag(self, _run_cli) -> None:
         completed = _run_cli("spec", "show", "--help")
         assert "--template" not in completed.stdout
-        assert "Show fully merged config" in completed.stdout
+        assert "matter is included when --for is used" in completed.stdout

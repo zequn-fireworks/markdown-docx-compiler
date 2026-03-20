@@ -45,7 +45,7 @@ def register_spec_parser(noun_subparsers: argparse._SubParsersAction) -> None:  
     show_p.add_argument(
         "--resolved",
         action="store_true",
-        help="Show fully merged config (built-ins + sidecar + front matter)",
+        help="Show resolved document config and sidecar data (front matter is included when --for is used)",
     )
     show_p.set_defaults(handler=_handle_show, verb="show")
 

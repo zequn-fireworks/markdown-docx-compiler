@@ -6,11 +6,14 @@ import re
 from pathlib import Path
 from zipfile import ZipFile
 
+import pytest
+
 from markdown_docx_compiler.compile import compile_markdown_file
-from markdown_docx_compiler.models.config import SidecarConfig
+from markdown_docx_compiler.models.config import BlockOverride, SidecarConfig
 from markdown_docx_compiler.models.document import (
     Heading,
     ImageContent,
+    List,
     Paragraph,
     Table,
     TextContent,
@@ -19,6 +22,7 @@ from markdown_docx_compiler.models.loader import load_sidecar
 from markdown_docx_compiler.models.style import BlockStyle, FontStyle, SpacingStyle
 from markdown_docx_compiler.parser.markdown import parse_markdown
 from markdown_docx_compiler.resolve.cascade import (
+    resolve_all_block_styles,
     resolve_block_style,
     resolve_document_config,
     resolve_region_styles,
@@ -185,6 +189,38 @@ class TestCascade:
         assert style.table is not None
         assert style.table.columns == ["3fr", "1fr", "1fr"]
 
+    def test_block_override_type_mismatch_raises(self) -> None:
+        sidecar = SidecarConfig(
+            blocks={
+                "results-table": BlockOverride(type="paragraph", style=BlockStyle()),
+            }
+        )
+        config = resolve_document_config(sidecar=sidecar)
+        md = "<!-- docx:id=results-table -->\n| A | B |\n| - | - |\n| 1 | 2 |\n"
+        doc = parse_markdown(md, metadata={})
+
+        with pytest.raises(ValueError, match="Block override type mismatch"):
+            resolve_block_style(block=doc.body[0], sidecar=sidecar, document=config)
+
+    def test_nested_list_item_block_receives_anchor_override(self) -> None:
+        sidecar = SidecarConfig(
+            blocks={
+                "item-para": BlockOverride(type="paragraph", style=BlockStyle(font=FontStyle(bold=True))),
+            }
+        )
+        config = resolve_document_config(sidecar=sidecar)
+        md = "- <!-- docx:id=item-para -->\n  First item\n"
+        doc = parse_markdown(md, metadata={})
+
+        styles = resolve_all_block_styles(blocks=doc.body, sidecar=sidecar, document=config)
+        list_block = doc.body[0]
+        assert isinstance(list_block, List)
+        inner_para = list_block.items[0].blocks[0]
+        style = styles[inner_para.meta.index]
+
+        assert style.font is not None
+        assert style.font.bold is True
+
     def test_region_style_resolution(self) -> None:
         sidecar = load_sidecar(FIXTURE_DIR / "sample_report.docx.yaml")
         _, page_footer, _ = resolve_region_styles(sidecar)
@@ -270,3 +306,36 @@ class TestCompilation:
         with ZipFile(output) as z:
             media = {n for n in z.namelist() if n.startswith("word/media/")}
         assert media
+
+    def test_links_are_emitted_as_real_hyperlinks_and_title_metadata(self, tmp_path: Path) -> None:
+        markdown = tmp_path / "linked.md"
+        markdown.write_text(
+            "---\ntitle: Linked Document\n---\n\n[Example](https://example.com)\n",
+            encoding="utf-8",
+        )
+        output = tmp_path / "linked.docx"
+
+        compile_markdown_file(input_path=markdown, output_path=output)
+
+        with ZipFile(output) as z:
+            document_xml = z.read("word/document.xml").decode()
+            relationships = z.read("word/_rels/document.xml.rels").decode()
+            core_props = z.read("docProps/core.xml").decode()
+
+        assert "w:hyperlink" in document_xml
+        assert "https://example.com" in relationships
+        assert "Linked Document" in core_props
+
+    def test_link_formatting_is_preserved_inside_hyperlinks(self, tmp_path: Path) -> None:
+        markdown = tmp_path / "styled_link.md"
+        markdown.write_text("[**Bold** and *italic*](https://example.com)\n", encoding="utf-8")
+        output = tmp_path / "styled_link.docx"
+
+        compile_markdown_file(input_path=markdown, output_path=output)
+
+        with ZipFile(output) as z:
+            document_xml = z.read("word/document.xml").decode()
+
+        assert "w:hyperlink" in document_xml
+        assert "<w:b/>" in document_xml
+        assert "<w:i/>" in document_xml

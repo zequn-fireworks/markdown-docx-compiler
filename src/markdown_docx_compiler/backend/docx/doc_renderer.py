@@ -78,6 +78,7 @@ class DocxRenderer:
                 doc=self.document,
                 block=block,
                 style=style,
+                block_styles=block_styles,
                 config=self.config,
                 content_width_inches=cw_inches,
                 content_width_twips=cw_twips,
@@ -91,6 +92,8 @@ class DocxRenderer:
         config = self.config
         page = config.page
         _d = DEFAULT_DOCUMENT
+        if config.title:
+            self.document.core_properties.title = config.title
         for section in self.document.sections:
             section.top_margin = Inches(page.margin.top or _d.page.margin.top or 1.0)
             section.bottom_margin = Inches(page.margin.bottom or _d.page.margin.bottom or 0.8)

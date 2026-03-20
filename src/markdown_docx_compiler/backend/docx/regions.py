@@ -156,6 +156,7 @@ def render_doc_header(
                 font_color=font_color,
                 mono_font=mono_font,
                 style=style,
+                config=config,
             )
 
     if not region.left and not region.right:
@@ -183,6 +184,7 @@ def render_doc_header(
         font_color=font_color,
         mono_font=mono_font,
         style=style,
+        config=config,
     )
     right_cell.paragraphs[0].alignment = WD_ALIGN_PARAGRAPH.RIGHT
     _render_items_into_cell(
@@ -193,6 +195,7 @@ def render_doc_header(
         font_color=font_color,
         mono_font=mono_font,
         style=style,
+        config=config,
         alignment=WD_ALIGN_PARAGRAPH.RIGHT,
     )
 
@@ -233,6 +236,7 @@ def _render_lcr_paragraph(
                     paragraph=paragraph,
                     nodes=item.content,
                     font=FontStyle(family=font_name, size=size, color=color),
+                    link=config.link,
                     mono_font=config.mono_font or "Consolas",
                 )
                 return
@@ -283,6 +287,7 @@ def _render_single_slot_content(
                 paragraph=paragraph,
                 nodes=item.content,
                 font=FontStyle(family=font_name, size=font_size, color=color),
+                link=config.link,
                 mono_font=config.mono_font or "Consolas",
             )
     elif isinstance(item, ImageContent):
@@ -314,6 +319,7 @@ def _render_item_as_paragraph(
     font_color: str,
     mono_font: str,
     style: RegionStyle,
+    config: DocumentConfig,
 ) -> None:
     """Render a single slot item as a full-width body paragraph."""
     if isinstance(item, ImageContent):
@@ -330,6 +336,7 @@ def _render_item_as_paragraph(
             paragraph=para,
             nodes=item.content,
             font=FontStyle(family=font_name, size=font_size, color=font_color),
+            link=config.link,
             mono_font=mono_font,
         )
 
@@ -343,6 +350,7 @@ def _render_items_into_cell(
     font_color: str,
     mono_font: str,
     style: RegionStyle,
+    config: DocumentConfig,
     alignment: int | None = None,
 ) -> None:
     """Render a list of slot items into a table cell, one paragraph per item."""
@@ -375,6 +383,7 @@ def _render_items_into_cell(
                     size=font_size,
                     color=font_color,
                 ),
+                link=config.link,
                 mono_font=mono_font,
             )
 

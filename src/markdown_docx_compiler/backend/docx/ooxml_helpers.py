@@ -6,7 +6,8 @@ API doesn't expose enough granularity.
 
 from __future__ import annotations
 
-from docx.oxml import parse_xml
+from docx.opc.constants import RELATIONSHIP_TYPE as RT
+from docx.oxml import OxmlElement, parse_xml
 from docx.oxml.ns import nsdecls, qn
 from docx.shared import Pt, RGBColor
 from docx.table import Table, _Cell
@@ -43,6 +44,21 @@ def add_page_field(paragraph: Paragraph, *, font_name: str, font_size: float, co
         run.font.color.rgb = rgb(color)
         set_all_fonts(run, font_name)
         run._r.append(parse_xml(xml_value))
+
+
+def add_hyperlink_run(paragraph: Paragraph, *, text: str, url: str) -> Run:
+    """Append a real external hyperlink run to a paragraph and return the run."""
+    relationship_id = paragraph.part.relate_to(url, RT.HYPERLINK, is_external=True)
+    hyperlink = OxmlElement("w:hyperlink")
+    hyperlink.set(qn("r:id"), relationship_id)
+
+    run_element = OxmlElement("w:r")
+    hyperlink.append(run_element)
+    paragraph._p.append(hyperlink)
+
+    run = Run(run_element, paragraph)
+    run.text = text
+    return run
 
 
 # -- Table helpers ---------------------------------------------------------

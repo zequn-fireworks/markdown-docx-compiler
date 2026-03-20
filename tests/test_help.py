@@ -73,6 +73,15 @@ class TestGetHelpText:
         for topic in VALID_TOPICS:
             assert topic in str(exc_info.value)
 
+    def test_front_matter_topic_does_not_document_region_keys(self) -> None:
+        text = get_help_text("frontmatter")
+        assert "logo_path" not in text
+        assert "footer_center" not in text
+
+    def test_anchor_topic_mentions_list_item_support(self) -> None:
+        text = get_help_text("anchors")
+        assert "blocks inside list items" in text
+
 
 class TestBuildHelpJson:
     """Test the machine-readable discovery payload."""

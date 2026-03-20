@@ -22,7 +22,7 @@ from markdown_docx_compiler.models.config import (
     RegionStyle,
     SidecarConfig,
 )
-from markdown_docx_compiler.models.document import BlockNode, block_type_name
+from markdown_docx_compiler.models.document import BlockNode, block_type_name, walk_block_tree
 from markdown_docx_compiler.models.style import (
     BlockStyle,
     FontStyle,
@@ -111,6 +111,11 @@ def resolve_block_style(
     anchor = block.meta.anchor
     if anchor and anchor in sidecar.blocks:
         override = sidecar.blocks[anchor]
+        if override.type and override.type != bt:
+            raise ValueError(
+                f"Block override type mismatch for anchor '{anchor}': "
+                f"override declares '{override.type}' but actual block type is '{bt}'."
+            )
         style = merge_block_style(style, override.style)
 
     return style
@@ -122,14 +127,14 @@ def resolve_all_block_styles(
     sidecar: SidecarConfig,
     document: DocumentConfig,
 ) -> dict[int, BlockStyle]:
-    """Resolve styles for every block in the body, keyed by block index."""
+    """Resolve styles for every block in the body tree, keyed by block index."""
     return {
         block.meta.index: resolve_block_style(
             block=block,
             sidecar=sidecar,
             document=document,
         )
-        for block in blocks
+        for block in walk_block_tree(blocks)
     }
 
 

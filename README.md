@@ -19,7 +19,7 @@ trademark issues.
 
 ## Features
 
-- **Vanilla markdown in, polished DOCX out** — no custom syntax required
+- **Plain markdown with optional `docx:` tags** for regions and block anchors
 - **Sidecar config** for layout control (fonts, colors, column widths, per-block styling)
 - **Composable sidecars** via `inherits` for reusable document defaults
 - **Deterministic** table, footer, and page-level styling
@@ -51,14 +51,20 @@ file.
 
 ## How it works
 
-Write standard markdown with optional YAML front matter:
+Write standard markdown with optional YAML front matter for document-level defaults:
 
 ```md
 ---
 title: Offer of Employment
-logo_path: ./logo.png
-footer_center: "2026-03-19"
+font: Arial
+text_color: "202124"
 ---
+
+<!-- docx:doc_header.left -->
+![Acme Logo](./logo.png)
+
+<!-- docx:page_footer.center -->
+2026-03-19
 
 # Offer of Employment
 
@@ -95,6 +101,10 @@ blocks:
 ```
 
 Run `mdc doc create offer.md -o offer.docx` and you get a fully styled document.
+
+Front matter only controls document-level metadata, font, link, and page
+settings. Use region tags for header/footer content, and use `blocks:` anchors
+for body block overrides, including blocks inside list items.
 
 ## CLI reference
 
