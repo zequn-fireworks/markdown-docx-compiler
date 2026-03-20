@@ -1,7 +1,40 @@
 # markdown-docx-compiler
 
-A standalone compiler that turns AI-authored markdown into polished `.docx`
-files optimized for Google Docs import and human editing.
+[![CI](https://github.com/zequn-fireworks/markdown-docx-compiler/actions/workflows/ci.yml/badge.svg?branch=main)](https://github.com/zequn-fireworks/markdown-docx-compiler/actions/workflows/ci.yml)
+[![Python 3.11+](https://img.shields.io/badge/python-3.11%2B-3776AB)](https://www.python.org/downloads/)
+[![License: MIT](https://img.shields.io/badge/license-MIT-2ea44f)](LICENSE)
+[![Agent-friendly CLI](https://img.shields.io/badge/CLI-agent--friendly-7c3aed)](#cli-reference)
+
+Readable markdown in, polished DOCX out.
+
+`markdown-docx-compiler` is an AI-native, agent-friendly document compiler
+that turns readable markdown into polished, editable `.docx` files optimized
+for Google Docs import, final human adjustments, and easy PDF export.
+
+## Why It Exists
+
+- **Readable source for agents and humans** - keep documents mostly vanilla
+  markdown instead of burying formatting in HTML or template-only syntax.
+- **Small sidecars, large rendering gains** - move layout and styling into
+  reusable YAML sidecars so the marginal LOC stays low while the rendered
+  result looks much better.
+- **DOCX as the collaboration surface** - compile into polished `.docx` for
+  final edits in Word or Google Docs instead of treating the output as a dead
+  render.
+- **PDF-ready last mile** - once the DOCX looks right, exporting to PDF with
+  LibreOffice, Word, or your preferred tool is straightforward.
+- **Agent-friendly CLI** - noun-verb commands and `--json` output fit deep
+  research, canvas-style drafting, and automated reporting workflows.
+
+## Ideal Workflow
+
+1. An agent or human drafts a report, memo, proposal, launch brief, or design
+   review in markdown.
+2. A sidecar file applies reusable layout and styling without polluting the
+   source markdown.
+3. `mdc doc create` compiles the document into polished, editable DOCX.
+4. A human makes the final judgment calls in Word or Google Docs.
+5. The finished DOCX can be exported to PDF as the final delivery format.
 
 ## Samples
 
@@ -29,6 +62,8 @@ trademark issues.
 - **Deterministic** table, footer, and page-level styling
 - **Google Docs optimized** — import fidelity is the primary target
 - **Agent-friendly CLI** with `--json` output for tool integration
+- **Document-first workflow** for research reports, design docs, launch briefs,
+  internal memos, and final editable handoff
 
 ## Quick start
 
@@ -52,6 +87,9 @@ mdc doc create report.md --spec report.docx.yaml -o report.docx
 
 If `-o` is omitted, the compiler writes `<input>.docx` next to the markdown
 file.
+
+The compiler itself is DOCX-first. PDF export is typically the downstream step
+once the generated DOCX is approved.
 
 ## How it works
 
@@ -109,6 +147,10 @@ Run `mdc doc create offer.md -o offer.docx` and you get a fully styled document.
 Front matter only controls document-level metadata, font, link, and page
 settings. Use region tags for header/footer content, and use `blocks:` anchors
 for body block overrides, including blocks inside list items.
+
+The important workflow property is that the source markdown stays readable
+enough for LLMs and humans to keep editing directly, while the sidecar carries
+the presentational complexity.
 
 ## CLI reference
 
