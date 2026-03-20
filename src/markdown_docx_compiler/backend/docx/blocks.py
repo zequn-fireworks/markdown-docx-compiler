@@ -14,8 +14,8 @@ from docx.shared import Inches, Pt
 from markdown_docx_compiler.backend.docx.inlines import _stringify_inline, render_inline_nodes
 from markdown_docx_compiler.backend.docx.ooxml_helpers import (
     continue_list_numbering,
-    rgb,
     restart_list_numbering,
+    rgb,
     set_all_fonts,
     set_cell_shading,
     set_cell_vertical_alignment,
@@ -193,7 +193,9 @@ def _render_list(
             inner_style = block_styles.get(inner.meta.index, style)
             if isinstance(inner, Paragraph):
                 continuation = not first_paragraph_in_item
-                para = doc.add_paragraph(style=_list_style_name(ordered=block.ordered, level=level, continuation=continuation))
+                para = doc.add_paragraph(
+                    style=_list_style_name(ordered=block.ordered, level=level, continuation=continuation)
+                )
                 if continuation:
                     base_indent = _continuation_indent_inches(level)
                 else:
@@ -447,10 +449,7 @@ def _alignment(value: str) -> WD_ALIGN_PARAGRAPH:
 
 def _list_style_name(*, ordered: bool, level: int, continuation: bool) -> str:
     capped_level = min(level, 2)
-    if continuation:
-        base = "List Continue"
-    else:
-        base = "List Number" if ordered else "List Bullet"
+    base = "List Continue" if continuation else "List Number" if ordered else "List Bullet"
     return base if capped_level == 0 else f"{base} {capped_level + 1}"
 
 

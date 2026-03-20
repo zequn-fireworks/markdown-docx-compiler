@@ -200,9 +200,19 @@ class TestDocxRendererRender:
         ir = Document(
             metadata={},
             body=[
-                List(ordered=True, items=[ListItem(blocks=[Paragraph(content=[TextSpan("First list item")], meta=BlockMeta(index=1))])]),
+                List(
+                    ordered=True,
+                    items=[
+                        ListItem(blocks=[Paragraph(content=[TextSpan("First list item")], meta=BlockMeta(index=1))])
+                    ],
+                ),
                 Paragraph(content=[TextSpan("Separator")], meta=BlockMeta(index=2)),
-                List(ordered=True, items=[ListItem(blocks=[Paragraph(content=[TextSpan("Second list item")], meta=BlockMeta(index=3))])]),
+                List(
+                    ordered=True,
+                    items=[
+                        ListItem(blocks=[Paragraph(content=[TextSpan("Second list item")], meta=BlockMeta(index=3))])
+                    ],
+                ),
             ],
         )
 
@@ -246,7 +256,11 @@ class TestDocxRendererRender:
                                 List(
                                     ordered=True,
                                     items=[
-                                        ListItem(blocks=[Paragraph(content=[TextSpan("Child item")], meta=BlockMeta(index=2))]),
+                                        ListItem(
+                                            blocks=[
+                                                Paragraph(content=[TextSpan("Child item")], meta=BlockMeta(index=2))
+                                            ]
+                                        ),
                                     ],
                                     meta=BlockMeta(index=3),
                                 ),
@@ -273,7 +287,9 @@ class TestDocxRendererRender:
             document_xml = zf.read("word/document.xml").decode("utf-8")
             numbering_xml = zf.read("word/numbering.xml").decode("utf-8")
 
-        num_entries = re.findall(r"<w:numPr><w:ilvl w:val=\"(\d+)\"/><w:numId w:val=\"(\d+)\"/></w:numPr>", document_xml)
+        num_entries = re.findall(
+            r"<w:numPr><w:ilvl w:val=\"(\d+)\"/><w:numId w:val=\"(\d+)\"/></w:numPr>", document_xml
+        )
         assert len(num_entries) >= 2
         assert num_entries[0][0] == "0"
         assert num_entries[1][0] == "1"
@@ -305,7 +321,11 @@ class TestDocxRendererRender:
                                 List(
                                     ordered=True,
                                     items=[
-                                        ListItem(blocks=[Paragraph(content=[TextSpan("Child item")], meta=BlockMeta(index=2))]),
+                                        ListItem(
+                                            blocks=[
+                                                Paragraph(content=[TextSpan("Child item")], meta=BlockMeta(index=2))
+                                            ]
+                                        ),
                                     ],
                                     meta=BlockMeta(index=3),
                                 ),
@@ -358,7 +378,11 @@ class TestDocxRendererRender:
                                 List(
                                     ordered=True,
                                     items=[
-                                        ListItem(blocks=[Paragraph(content=[TextSpan("Child item")], meta=BlockMeta(index=2))]),
+                                        ListItem(
+                                            blocks=[
+                                                Paragraph(content=[TextSpan("Child item")], meta=BlockMeta(index=2))
+                                            ]
+                                        ),
                                     ],
                                     meta=BlockMeta(index=3),
                                 ),

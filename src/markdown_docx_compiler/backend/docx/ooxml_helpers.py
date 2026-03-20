@@ -6,7 +6,7 @@ API doesn't expose enough granularity.
 
 from __future__ import annotations
 
-from typing import Any
+from typing import Any, cast
 
 from docx.opc.constants import RELATIONSHIP_TYPE as RT
 from docx.oxml import OxmlElement, parse_xml
@@ -144,7 +144,8 @@ def set_cell_vertical_alignment(cell: _Cell, val: str = "center") -> None:
 
 def restart_list_numbering(paragraph: Paragraph, *, scheme: str, ilvl: int) -> int:
     """Create a fresh numbering sequence for the paragraph."""
-    numbering = paragraph.part.numbering_part.element
+    numbering_part = cast(Any, paragraph.part).numbering_part
+    numbering = numbering_part.element
     abstract_num_id = _ensure_abstract_num_id(numbering, scheme=scheme)
     current_ids = [int(num.get(qn("w:numId"))) for num in numbering.findall(qn("w:num"))]
     new_num_id = (max(current_ids) + 1) if current_ids else 1
