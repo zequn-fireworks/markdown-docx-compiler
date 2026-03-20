@@ -236,7 +236,7 @@ def _build_abstract_num(*, abstract_num_id: int, scheme: str) -> Any:
 
         lvl.append(
             parse_xml(
-                f'<w:pPr {nsdecls("w")}>'
+                f"<w:pPr {nsdecls('w')}>"
                 f'<w:tabs><w:tab w:val="num" w:pos="{left}"/></w:tabs>'
                 f'<w:ind w:left="{left}" w:hanging="360"/>'
                 f"</w:pPr>"
