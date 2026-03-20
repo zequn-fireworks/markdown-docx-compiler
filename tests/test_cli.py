@@ -126,6 +126,10 @@ class TestDocumentCreate:
         )
         assert "Wrote" in completed.stdout
 
+    def test_create_help_documents_default_output_path(self, _run_cli) -> None:
+        completed = _run_cli("document", "create", "--help")
+        assert "<input>.docx" in completed.stdout
+
 
 class TestDocumentValidate:
     def test_validate_reports_blocks(self, _run_cli) -> None:
@@ -151,6 +155,8 @@ class TestDocumentValidate:
         payload = json.loads(completed.stdout)
         assert payload["ok"] is True
         assert payload["data"]["dry_run"] is True
+        assert payload["data"]["validation_only"] is True
+        assert payload["data"]["default_output_path"].endswith("sample_report.docx")
 
 
 # ---------------------------------------------------------------------------
@@ -298,6 +304,20 @@ class TestThemeShow:
 
 
 class TestErrorHandling:
+    def test_missing_noun_human(self, _run_cli) -> None:
+        completed = _run_cli("create", check=False)
+        assert completed.returncode == 2
+        assert "Missing noun before verb: create" in completed.stderr
+        assert "mdc doc create" in completed.stderr
+
+    def test_missing_noun_json(self, _run_cli) -> None:
+        completed = _run_cli("--json", "create", check=False)
+        assert completed.returncode == 2
+        payload = json.loads(completed.stdout)
+        assert payload["ok"] is False
+        assert payload["error"]["code"] == "MISSING_NOUN"
+        assert "mdc doc create" in payload["error"]["hint"]
+
     def test_file_not_found_human(self, _run_cli) -> None:
         completed = _run_cli("document", "create", "nonexistent.md", check=False)
         assert completed.returncode == 1

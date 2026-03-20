@@ -46,6 +46,9 @@ With a sidecar config:
 mdc doc create report.md --spec report.docx.yaml -o report.docx
 ```
 
+If `-o` is omitted, the compiler writes `<input>.docx` next to the markdown
+file.
+
 ## How it works
 
 Write standard markdown with optional YAML front matter:

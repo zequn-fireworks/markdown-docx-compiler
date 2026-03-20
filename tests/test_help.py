@@ -70,6 +70,7 @@ class TestGetHelpText:
         text = get_help_text(None)
         assert "# markdown-docx-compiler" in text
         assert "mdc doc create" in text
+        assert "<input>.docx" in text
 
     @pytest.mark.parametrize("topic", VALID_TOPICS)
     def test_every_valid_topic_resolves(self, topic: str) -> None:

@@ -2,7 +2,6 @@ name: CI
 
 on:
   push:
-    branches: [main]
   pull_request:
   workflow_dispatch:
 
@@ -17,8 +16,8 @@ jobs:
   lint:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
-      - uses: astral-sh/setup-uv@v5
+      - uses: actions/checkout@v6.0.2
+      - uses: astral-sh/setup-uv@v7.6.0
         with:
           python-version: "3.11"
       - run: uv sync --frozen
@@ -28,8 +27,8 @@ jobs:
   typecheck:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
-      - uses: astral-sh/setup-uv@v5
+      - uses: actions/checkout@v6.0.2
+      - uses: astral-sh/setup-uv@v7.6.0
         with:
           python-version: "3.11"
       - run: uv sync --frozen
@@ -42,8 +41,8 @@ jobs:
       matrix:
         python-version: ["3.11", "3.12", "3.13"]
     steps:
-      - uses: actions/checkout@v4
-      - uses: astral-sh/setup-uv@v5
+      - uses: actions/checkout@v6.0.2
+      - uses: astral-sh/setup-uv@v7.6.0
         with:
           python-version: ${{ matrix.python-version }}
       - run: uv sync --frozen
@@ -52,14 +51,14 @@ jobs:
   package:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
-      - uses: astral-sh/setup-uv@v5
+      - uses: actions/checkout@v6.0.2
+      - uses: astral-sh/setup-uv@v7.6.0
         with:
           python-version: "3.11"
       - run: uv sync --frozen
       - run: uv build
       - run: uvx twine check dist/*
-      - uses: actions/upload-artifact@v4
+      - uses: actions/upload-artifact@v7.0.0
         with:
           name: python-distributions
           path: dist/*
@@ -68,13 +67,13 @@ jobs:
   review-fixtures:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
-      - uses: astral-sh/setup-uv@v5
+      - uses: actions/checkout@v6.0.2
+      - uses: astral-sh/setup-uv@v7.6.0
         with:
           python-version: "3.11"
       - run: uv sync --frozen
       - run: uv run python tests/compile_review_fixtures.py
-      - uses: actions/upload-artifact@v4
+      - uses: actions/upload-artifact@v7.0.0
         with:
           name: review-fixtures
           path: tests/manual_review_output/*.docx

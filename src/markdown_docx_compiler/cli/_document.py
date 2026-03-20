@@ -82,7 +82,11 @@ def register_document_parser(noun_subparsers: argparse._SubParsersAction) -> Non
         formatter_class=argparse.RawDescriptionHelpFormatter,
     )
     create_p.add_argument("input", help="Input markdown file path")
-    create_p.add_argument("-o", "--output-file", help="Output DOCX file path")
+    create_p.add_argument(
+        "-o",
+        "--output-file",
+        help="Output DOCX file path (defaults to <input>.docx next to the markdown file)",
+    )
     create_p.add_argument("--spec", help="Sidecar YAML path (auto-discovered if omitted)")
     create_p.set_defaults(handler=_handle_create, verb="create")
 
@@ -121,8 +125,11 @@ def _handle_validate(args: argparse.Namespace) -> None:
         spec_path=args.spec,
         dry_run=True,
     )
+    data = result.to_dict()
+    data["validation_only"] = True
+    data["default_output_path"] = result.output_path
     emit_success(
         command="document validate",
-        data=result.to_dict(),
+        data=data,
         human=f"Valid — {result.block_count} blocks",
     )

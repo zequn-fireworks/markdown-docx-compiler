@@ -19,6 +19,8 @@ Compile AI-authored markdown into polished .docx for Google Docs import.
   mdc doc create report.md --spec report.docx.yaml -o report.docx
   mdc doc validate report.md
 
+If `-o` is omitted, the compiler writes `<input>.docx` next to the markdown file.
+
 ## Reference documentation
 
   mdc doc --help         Supported markdown features and anchors
