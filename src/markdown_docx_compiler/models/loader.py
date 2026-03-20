@@ -261,6 +261,13 @@ def load_sidecar(path: Path | None) -> SidecarConfig:
     """
     if path is None:
         return SidecarConfig()
+    return _load_sidecar(path.resolve(), chain=())
+
+
+def _load_sidecar(path: Path, *, chain: tuple[Path, ...]) -> SidecarConfig:
+    if path in chain:
+        cycle = " -> ".join(p.name for p in (*chain, path))
+        raise ValueError(f"Sidecar inheritance cycle detected: {cycle}")
     if not path.exists():
         raise FileNotFoundError(f"Sidecar file not found: {path}")
 
@@ -271,7 +278,7 @@ def load_sidecar(path: Path | None) -> SidecarConfig:
         base_path = (path.parent / config.inherits).resolve()
         if not base_path.exists():
             raise FileNotFoundError(f"Inherited sidecar not found: {base_path}")
-        base_config = load_sidecar(base_path)
+        base_config = _load_sidecar(base_path, chain=(*chain, path))
         from markdown_docx_compiler.resolve.merge import merge_sidecar_config
 
         config = merge_sidecar_config(base_config, config)

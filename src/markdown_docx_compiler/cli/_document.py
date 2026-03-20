@@ -48,7 +48,8 @@ Place content into page headers, footers, or a doc header:
   <!-- docx:page_footer.right -->
   <!-- docx:doc_header.left -->
 
-The tagged block is extracted into the region slot.
+The next top-level paragraph, heading, or standalone image is extracted into
+the region slot. Other block types are rejected.
 
 ## Anchor tags
 
@@ -57,6 +58,8 @@ Tag a block for instance-level styling:
   <!-- docx:id=results-table -->
 
 Reference the anchor in the sidecar `blocks:` section.
+Anchors apply only to the next top-level body block.
+Anchors inside list items and other nested structures are not supported.
 """
 
 

@@ -111,6 +111,11 @@ def resolve_block_style(
     anchor = block.meta.anchor
     if anchor and anchor in sidecar.blocks:
         override = sidecar.blocks[anchor]
+        if override.type and override.type != bt:
+            raise ValueError(
+                f"Block override type mismatch for anchor '{anchor}': "
+                f"override declares '{override.type}' but actual block type is '{bt}'."
+            )
         style = merge_block_style(style, override.style)
 
     return style

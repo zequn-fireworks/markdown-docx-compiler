@@ -56,12 +56,14 @@ Place it next to your markdown file as ``<name>.docx.yaml``.
       type: table
       table: { columns: [3fr, 1fr, 1fr] }
 
+Anchors in ``blocks:`` target top-level body blocks only.
+
 ## Resolution order
 
   1. Built-in defaults
   2. Sidecar document globals + type defaults
   3. Sidecar block instance overrides (by anchor)
-  4. Front matter overrides
+  4. Front matter overrides document config only
 
 ## Auto-discovery
 
@@ -77,7 +79,7 @@ TOPIC_INDEX: list[tuple[str, str]] = [
     ("markdown", "Supported markdown features and constraints"),
     ("frontmatter", "Front matter keys for document metadata"),
     ("sidecar", "Sidecar config structure and resolution order"),
-    ("anchors", "HTML comment anchor syntax"),
+    ("anchors", "docx tag anchor syntax"),
 ]
 
 VALID_TOPICS: list[str] = [name for name, _ in TOPIC_INDEX]

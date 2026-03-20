@@ -152,3 +152,12 @@ class TestLoadSidecarInheritance:
 
         with pytest.raises(FileNotFoundError, match="Sidecar file not found"):
             load_sidecar(missing)
+
+    def test_inheritance_cycle_raises_clear_error(self, tmp_path) -> None:
+        a = tmp_path / "a.docx.yaml"
+        b = tmp_path / "b.docx.yaml"
+        a.write_text("inherits: ./b.docx.yaml\n", encoding="utf-8")
+        b.write_text("inherits: ./a.docx.yaml\n", encoding="utf-8")
+
+        with pytest.raises(ValueError, match="Sidecar inheritance cycle detected"):
+            load_sidecar(a)

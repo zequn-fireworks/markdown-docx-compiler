@@ -59,3 +59,26 @@ def test_parse_markdown_captures_anchor_and_blocks() -> None:
     assert isinstance(document.body[7], CodeBlock)
     assert isinstance(document.body[8], Image)
     assert isinstance(document.body[9], Paragraph)
+
+
+def test_parse_markdown_allows_anchor_on_top_level_list() -> None:
+    document = parse_markdown("<!-- docx:id=task-list -->\n- Item one\n- Item two\n", metadata={})
+
+    assert isinstance(document.body[0], List)
+    assert document.body[0].meta.anchor == "task-list"
+
+
+def test_nested_anchor_in_list_item_is_rejected() -> None:
+    markdown = "- <!-- docx:id=item-para -->\n  First item\n"
+
+    with pytest.raises(ValueError, match="top-level body blocks"):
+        parse_markdown(markdown, metadata={})
+
+
+def test_region_tag_on_unsupported_block_type_is_rejected() -> None:
+    markdown = "<!-- docx:page_footer.center -->\n| A | B |\n| --- | --- |\n| 1 | 2 |\n"
+
+    with pytest.raises(
+        ValueError, match="Region tags only support top-level paragraphs, headings, and standalone images"
+    ):
+        parse_markdown(markdown, metadata={})

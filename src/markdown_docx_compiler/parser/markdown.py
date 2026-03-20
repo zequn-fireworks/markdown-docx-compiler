@@ -42,6 +42,7 @@ from markdown_docx_compiler.models.document import (
     TableCell,
     TextContent,
     TextSpan,
+    block_type_name,
 )
 
 HELP_TOPIC_MARKDOWN = """\
@@ -71,7 +72,7 @@ HELP_TOPIC_MARKDOWN = """\
 
 These features are not handled by the compiler:
 
-- arbitrary HTML (except docx: anchor comments)
+- arbitrary HTML (except `docx:` tags)
 - footnotes
 - task lists (checkboxes)
 - math / LaTeX
@@ -79,15 +80,17 @@ These features are not handled by the compiler:
 - definition lists
 - nested blockquotes
 
-The only recognized HTML is the anchor comment (see `mdc document --help`):
+The only recognized HTML is `docx:` tags written with HTML comment syntax
+(see `mdc doc --help`):
 
   <!-- docx:id=name -->
+  <!-- docx:page_footer.right -->
 """
 
 HELP_TOPIC_ANCHORS = """\
 # Anchors
 
-Anchors are optional HTML comments that tag specific blocks for styling
+Anchors are optional `docx:` tags that mark specific blocks for styling
 from the sidecar config.
 
 ## Syntax
@@ -96,10 +99,11 @@ from the sidecar config.
 
 ## Rules
 
-- The comment must be on its own line.
-- It applies to the next markdown block.
-- The comment itself is not rendered in the output.
-- Only comments starting with docx: are treated as compiler metadata.
+- The tag must be on its own line.
+- It applies to the next top-level body block.
+- The tag itself is not rendered in the output.
+- Only `docx:` tags are treated as compiler metadata.
+- Anchors inside lists or other nested structures are rejected.
 
 ## Example
 
@@ -179,7 +183,10 @@ class _IRWalker:
                 elif isinstance(block, (Paragraph, Heading)):
                     regions[region_name][slot_name].append(TextContent(content=block.content))
                 else:
-                    body.append(block)
+                    raise ValueError(
+                        "Region tags only support top-level paragraphs, headings, and standalone images; "
+                        f"`docx:{region_name}.{slot_name}` targeted a {block_type_name(block)} block."
+                    )
             else:
                 body.append(block)
 
@@ -197,7 +204,7 @@ class _IRWalker:
         while index < len(tokens):
             token = tokens[index]
 
-            if self._capture_comment(token):
+            if self._capture_docx_tag(token):
                 index += 1
                 continue
 
@@ -282,37 +289,69 @@ class _IRWalker:
 
         return results
 
-    # -- Comment / anchor capture ------------------------------------------
+    # -- docx tag capture --------------------------------------------------
 
-    def _capture_comment(self, token: Token) -> bool:
+    def _parse_docx_tag(self, token: Token) -> tuple[str, str | tuple[str, str]] | None:
         content = (token.content or "").strip()
         if token.type not in {"html_block", "html_inline"}:
-            return False
+            return None
         match = _ANCHOR_RE.fullmatch(content)
         if not match:
-            return False
+            return None
         payload = match.group(1).strip()
 
         region_match = _REGION_RE.fullmatch(payload)
         if region_match:
-            self._pending_region = (region_match.group(1), region_match.group(2))
-            self._pending_anchor = None
-            return True
+            return "region", (region_match.group(1), region_match.group(2))
 
         kv = _parse_kv_payload(payload)
         anchor_id = kv.get("id")
         if anchor_id:
-            self._pending_anchor = anchor_id
-            self._pending_region = None
+            return "anchor", anchor_id
+
+        return None
+
+    def _capture_docx_tag(self, token: Token) -> bool:
+        parsed = self._parse_docx_tag(token)
+        if parsed is None:
+            return False
+        kind, payload = parsed
+        if kind == "region":
+            assert isinstance(payload, tuple)
+            region_name, slot_name = payload
+            self._pending_region = (region_name, slot_name)
+            self._pending_anchor = None
+            return True
+
+        self._pending_anchor = str(payload)
+        self._pending_region = None
         return True
+
+    def _reject_nested_docx_tag(self, token: Token, *, container: str) -> None:
+        parsed = self._parse_docx_tag(token)
+        if parsed is None:
+            return
+        kind, _payload = parsed
+        if kind == "anchor":
+            raise ValueError(f"Anchor tags are only supported on top-level body blocks, not inside {container}.")
+        raise ValueError(
+            "Region tags are only supported on top-level paragraphs, headings, and standalone images, "
+            f"not inside {container}."
+        )
 
     # -- Metadata helpers --------------------------------------------------
 
-    def _next_meta(self) -> BlockMeta:
+    def _next_index(self) -> int:
         self._block_index += 1
+        return self._block_index
+
+    def _next_meta(self) -> BlockMeta:
         anchor = self._pending_anchor
         self._pending_anchor = None
-        return BlockMeta(anchor=anchor, index=self._block_index)
+        return BlockMeta(anchor=anchor, index=self._next_index())
+
+    def _next_unanchored_meta(self) -> BlockMeta:
+        return BlockMeta(index=self._next_index())
 
     def _resolve_path(self, path: str) -> str:
         p = Path(path)
@@ -336,11 +375,12 @@ class _IRWalker:
                 continue
 
             item_blocks: list[BlockNode] = []
-            item_meta = self._next_meta()
+            item_meta = self._next_unanchored_meta()
             index += 1
             while index < len(tokens) and tokens[index].type != "list_item_close":
                 token = tokens[index]
-                if self._capture_comment(token):
+                self._reject_nested_docx_tag(token, container="list items")
+                if self._capture_docx_tag(token):
                     index += 1
                     continue
                 if token.type == "paragraph_open":
@@ -414,6 +454,7 @@ class _IRWalker:
             token = tokens[index]
             if token.type == "blockquote_close":
                 return parts, index
+            self._reject_nested_docx_tag(token, container="blockquotes")
             if token.type == "inline":
                 parts.extend(_inline_from_token(token))
             index += 1

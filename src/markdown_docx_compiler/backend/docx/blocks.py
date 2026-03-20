@@ -217,6 +217,7 @@ def _render_table(doc: Any, block: Table, style: BlockStyle, config: DocumentCon
             paragraph=para,
             nodes=header.content,
             font=header_font,
+            link=style.link or config.link,
             mono_font=config.mono_font or "Consolas",
         )
 
@@ -237,6 +238,7 @@ def _render_table(doc: Any, block: Table, style: BlockStyle, config: DocumentCon
                 paragraph=para,
                 nodes=cell_content.content,
                 font=font,
+                link=style.link or config.link,
                 mono_font=config.mono_font or "Consolas",
             )
 

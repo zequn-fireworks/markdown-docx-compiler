@@ -12,6 +12,7 @@ HELP_TOPIC = """\
 
 Use YAML front matter for document-level metadata. Front matter overrides
 built-in defaults and sidecar document settings for the supported keys below.
+It does not control region content or per-block styling.
 
 ## Example
 
@@ -23,7 +24,7 @@ built-in defaults and sidecar document settings for the supported keys below.
 
 ## Supported keys
 
-  title                str    Document title
+  title                str    Document title metadata
   font                 str    Body font family name
   mono_font            str    Monospace font name
   text_color           str    Hex color for body text (e.g. "333333")
@@ -34,8 +35,8 @@ built-in defaults and sidecar document settings for the supported keys below.
   margin_left          float  Left margin in inches
   margin_right         float  Right margin in inches
 
-Note: for advanced layout (logos, footers, headers, per-block styling),
-use region tags in markdown and a sidecar YAML.  See `mdc doc --help`.
+Note: for advanced layout (logos, headers, footers, per-block styling),
+use region tags in markdown and a sidecar YAML. See `mdc doc --help`.
 """
 
 _FRONT_MATTER_RE = re.compile(r"\A---\s*\n(.+?)\n---\s*\n", re.DOTALL)

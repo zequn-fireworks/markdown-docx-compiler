@@ -8,7 +8,7 @@ from typing import Any
 from docx.shared import Pt
 from docx.text.run import Run
 
-from markdown_docx_compiler.backend.docx.ooxml_helpers import rgb, set_all_fonts
+from markdown_docx_compiler.backend.docx.ooxml_helpers import add_hyperlink_run, rgb, set_all_fonts
 from markdown_docx_compiler.models.document import (
     CodeSpan,
     EmphasisSpan,
@@ -116,13 +116,14 @@ def _render_node(
 
     if isinstance(node, LinkSpan):
         text = _stringify_inline(node.children)
-        run = paragraph.add_run(text)
+        run = add_hyperlink_run(paragraph, text=text, url=node.url)
         link_color = (link.color if link else None) or font.color or "2563EB"
         link_underline = link.underline if link else None
         if link_underline is None:
             link_underline = True
-        run.underline = link_underline
         _style_run(run, font=font, bold=bold, italic=italic, strike=strike, color_override=link_color)
+        run.underline = link_underline
+        return
 
 
 def _style_run(
