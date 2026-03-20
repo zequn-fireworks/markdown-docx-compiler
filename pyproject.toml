@@ -5,14 +5,14 @@ build-backend = "hatchling.build"
 [project]
 name = "markdown-docx-compiler"
 version = "0.1.0"
-description = "Layout-aware markdown to DOCX compiler optimized for Google Docs import."
+description = "AI-native, agent-friendly markdown to DOCX compiler for polished editable docs and PDF-ready workflows."
 readme = "README.md"
 requires-python = ">=3.11"
 license = { text = "MIT" }
 authors = [
   { name = "Zequn Li" }
 ]
-keywords = ["markdown", "docx", "google-docs", "document-generation", "python-docx"]
+keywords = ["markdown", "docx", "pdf", "google-docs", "document-generation", "python-docx", "ai", "agent", "deep-research"]
 classifiers = [
   "Intended Audience :: Developers",
   "License :: OSI Approved :: MIT License",
